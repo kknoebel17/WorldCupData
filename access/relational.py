@@ -55,14 +55,15 @@ class SQLAccess:
             db_version = cursor.fetchone()
             print(f"PostgresSQL version: {db_version[0]}")
 
-            # Clean up the cursor
-            cursor.close()
+            return cursor
 
         except OperationalError as e:
-            print(f"The error '{e}' occurred")
+            return f"The error '{e}' occurred"
 
-        finally:
-            # Ensure the connection closes even if errors happen
-            if connection is not None:
-                connection.close()
-                print("PostgresSQL connection is closed")
+    def close_connection(self, cursor):
+        try:
+            cursor.connection.close()
+            print("PostgresSQL connection is closed")
+
+        except OperationalError as e:
+            return f"The error '{e}' occurred"
