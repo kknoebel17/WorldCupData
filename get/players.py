@@ -11,24 +11,24 @@ class Players:
         self.sa.__int__()
         cursor = self.sa.create_connection()
         self.cursor = cursor
-
-    def get_all_players(self):
-        """Get all unique players in the database."""
-        all_players = []
         self.cursor.execute("SELECT * FROM worldcup26.players;")
-        all_entries = self.cursor.fetchall()
+        self.all_players = self.cursor.fetchall()
         self.sa.close_connection(self.cursor)
 
-        for entry in all_entries:
-            this_entry = entry[:7]
-            all_players.append(this_entry)
+    def get_player_summaries(self) -> pd.DataFrame:
+        """Get summary information for all players in the database."""
+        players_summary = []
+        # Only grab summary information
+        for player in self.all_players:
+            this_entry = player[:7]
+            players_summary.append(this_entry)
         player_cols = list(PLAYER_COLS.values())
-        cols_to_use = player_cols[:len(all_players[0])]
-        df_all_players = pd.DataFrame(
-            data=all_players,
+        cols_to_use = player_cols[:len(players_summary[0])]
+        df_players_summary = pd.DataFrame(
+            data=players_summary,
             columns=cols_to_use,
         )
 
-        return df_all_players
+        return df_players_summary
 
 
