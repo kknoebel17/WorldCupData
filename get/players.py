@@ -12,7 +12,7 @@ class Players:
     def get_all_players(self):
         """Get all unique players in the database."""
         all_players = []
-        self.cursor.execute("SELECT player_name FROM players.fifa_world_cup_26;")
+        self.cursor.execute("SELECT player_id FROM players.fifa_world_cup_26;")
         all_entries = self.cursor.fetchall()
         for entry in all_entries:
             this_entry = entry[0].strip()
