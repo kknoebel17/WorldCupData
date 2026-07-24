@@ -1,0 +1,84 @@
+"""Dataclasses used to create page details for the Player class."""
+
+from dataclasses import dataclass
+
+@dataclass
+class PlayerBase:
+    player: str
+    team: str
+    team_country: str
+    position: str
+    age: int
+    birth_year: int
+    club: str
+    cards_yellow: float
+    cards_red: float
+    minutes_per_game: int
+    minutes_pct: float
+    minutes_per_start: float
+    games_complete: int
+    games_subs: float
+    minutes_per_sub: float
+    unused_subs: int
+    plus_minus: float
+    plus_minus_per90: float
+    plus_minus_wowy: float
+    cards_yellow_red: int
+    fouls: int
+    fouled: int
+    pens_conceded: int
+    own_goals: int
+
+@dataclass
+class FieldPlayer(PlayerBase):
+    minutes: int
+    minutes_90s: float
+    games: int
+    games_starts: int
+    goals: int
+    assists: int
+    goals_assists: int
+    goals_pens: int
+    pens_made: int
+    pens_att: int
+    points_per_game: int
+    on_goals_for: int
+    on_goals_against: int
+    goals_per90: float
+    assists_per90: float
+    goals_assists_per90: float
+    goals_pens_per90: float
+    goals_assists_pens_per90: float
+    shots: int
+    shots_on_target: int
+    shots_on_target_pct: float
+    shots_per90: float
+    shots_on_target_per90: float
+    goals_per_shot: float
+    goals_per_shot_on_target: float
+    offsides: int
+    crosses: int
+    interceptions: int
+    tackles_won: int
+    pens_won: int
+
+@dataclass
+class GoalKeeper(PlayerBase):
+    gk_games: int
+    gk_games_starts: int
+    gk_minutes: int
+    gk_goals_against: int
+    gk_goals_against_per90: float
+    gk_shots_on_target_against: int
+    gk_saves: int
+    gk_save_pct: float
+    gk_wins: int
+    gk_ties: int
+    gk_losses: int
+    gk_clean_sheets: int
+    gk_clean_sheets_pct: float
+    gk_pens_att: int
+    gk_pens_allowed: int
+    gk_pens_saved: int
+    gk_pens_missed: int
+    gk_pens_save_pct: float
