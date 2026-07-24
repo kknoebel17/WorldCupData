@@ -53,8 +53,8 @@ def test_get_player_by_name(player_name, position):
     if player_det is None:  # Test null return
         assert player_det == to_test
     else:
-        for col in player_det.columns:
-            assert player_det[col].values[0] == to_test[col].values[0]
+        for col in to_test.columns:
+            assert player_det.loc[col].values[0] == to_test[col].values[0]
 
 @pytest.mark.parametrize(
     'player_name', [
@@ -74,9 +74,9 @@ def test_get_player_by_name_accents(player_name):
     to_test = test_row[target_cols]
     pls = Players()
     player_det = pls.get_player_by_name(player_name)
-    for col in player_det.columns:
+    for col in to_test.columns:
         # Test for unaccented name as this is what is shown to user
         if col == 'Player Name':
-            assert player_det[col].values[0] == name_to_test
+            assert player_det.loc[col].values[0] == name_to_test
         else:
-            assert player_det[col].values[0] == to_test[col].values[0]
+            assert player_det.loc[col].values[0] == to_test[col].values[0]

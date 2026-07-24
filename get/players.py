@@ -73,7 +73,7 @@ class Players:
             data=player_detail_corr,
         )
 
-        return df_det_corr
+        return df_det_corr.T
 
 
 
