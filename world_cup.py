@@ -21,17 +21,33 @@ with st.sidebar:
     )
 
 data_load_state = st.text('Getting stats for all players...')
-data = get_all_players()
+all_players = get_all_players()
 data_load_state.text("Done! All 2026 FIFA World Cup players are here.")
 
 
 if st.checkbox('Show player summaries'):
     st.subheader('Player summaries')
-    st.dataframe(data)
+    st.dataframe(all_players, hide_index=True)
 
 if player_name is not None:
     header = f"World Cup 2026 statistics for {player_name}"
-    st.title(header)
     players = Players()
     player_det = players.get_player_by_name(player_name)
-    st.dataframe(player_det)
+    try:
+        player_det = player_det.rename(columns={0: header})
+        event = st.data_editor(
+            player_det,
+            column_config={
+                "widgets": st.column_config.Column(
+                    f"World Cup 2026 statistics for {player_name}",
+                    width="large",
+                    required=True,
+                )
+            },
+            hide_index=True,
+            num_rows="dynamic",
+        )
+    except AttributeError:
+        pass
+
+
