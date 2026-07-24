@@ -6,6 +6,7 @@ from typing import Dict, List, Union
 import pandas as pd
 
 import constants as const
+import get.helpers as helpers
 from access.relational import SQLAccess
 from models.players import FieldPlayer, GoalKeeper
 
@@ -20,6 +21,8 @@ class Players:
         self.cursor = cursor
         self.cursor.execute("SELECT * FROM worldcup26.players;")
         self.all_players = pd.DataFrame(cursor.fetchall(), columns=[desc[0] for desc in cursor.description])
+        # Lower player names and remove accents
+        self.all_players = helpers.clean_player_name(self.all_players)
         self.sa.close_connection(self.cursor)
 
     def get_player_summaries(self) -> pd.DataFrame:
@@ -34,8 +37,12 @@ class Players:
 
     def get_player_by_name(self, player_name: str) -> Union[None, pd.DataFrame]:
         """Get player details by name."""
+        # Clean user inputs
+        player_name = helpers.remove_accents(player_name)
+        player_name = player_name.lower()
         player_detail = self.all_players[
-            self.all_players['player'].str.lower() == player_name.lower()
+            # Lower case to normalize unput from user
+            self.all_players['player'].str.lower() == player_name
         ]
         player_detail = player_detail.fillna('')
         if len(player_detail) == 0:

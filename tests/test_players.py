@@ -2,7 +2,6 @@
 
 import pandas as pd
 import pytest
-from pandas.testing import assert_frame_equal
 from pathlib import Path
 
 import constants as const
@@ -55,4 +54,29 @@ def test_get_player_by_name(player_name, position):
         assert player_det == to_test
     else:
         for col in player_det.columns:
+            assert player_det[col].values[0] == to_test[col].values[0]
+
+@pytest.mark.parametrize(
+    'player_name', [
+        ('Luka Modrić'),
+        ('Luka Modric'),
+])
+def test_get_player_by_name_accents(player_name):
+    name_in_test_file = 'Luka Modrić'
+    name_to_test = 'Luka Modric'
+    test_data_path = Path('tests/resources/sample_player_data.csv')
+    test_data = pd.read_csv(test_data_path)
+    test_row = test_data[test_data['player'] == name_in_test_file].fillna('')
+    # Reset column names to match output of get_player_by_name()
+    rename_dict = const.PLAYER_COLS
+    test_row = test_row.rename(columns=rename_dict)
+    target_cols = list(const.BASE_COLS.values()) + list(const.FIELD_PLAYER_COLS.values())
+    to_test = test_row[target_cols]
+    pls = Players()
+    player_det = pls.get_player_by_name(player_name)
+    for col in player_det.columns:
+        # Test for unaccented name as this is what is shown to user
+        if col == 'Player Name':
+            assert player_det[col].values[0] == name_to_test
+        else:
             assert player_det[col].values[0] == to_test[col].values[0]
