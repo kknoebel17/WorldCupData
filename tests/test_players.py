@@ -1,6 +1,11 @@
 """Single location for tests related to the Player class."""
 
-from constants import PLAYER_COLS
+import pandas as pd
+import pytest
+from pandas.testing import assert_frame_equal
+from pathlib import Path
+
+import constants as const
 from get.players import Players
 
 # Globals
@@ -13,5 +18,35 @@ def test_init():
 def test_get_player_summaries():
     pls = Players()
     all_pls = pls.get_player_summaries()
-    assert all_pls.columns.tolist() == list(PLAYER_COLS.values())[:7]
+    assert all_pls.columns.tolist() == list(const.PLAYER_COLS.values())[:7]
     assert len(all_pls) == UNIQUE_PLAYERS
+
+@pytest.mark.parametrize(
+    'player_name, position', [
+        ('Amine Gouiri', 'FW'),
+        ('Luca Zidane', 'GK'),
+        ('None', 'None'),
+        ('Carlos Santana', 'None'),  # Random name not in database
+])
+def test_get_player_by_name(player_name, position):
+    test_data_path = Path('tests/resources/sample_player_data.csv')
+    test_data = pd.read_csv(test_data_path)
+    test_row = test_data[test_data['player'] == player_name].fillna('')
+    # Reset column names to match output of get_player_by_name()
+    rename_dict = const.PLAYER_COLS
+    test_row = test_row.rename(columns=rename_dict)
+    if position == 'FW':
+        target_cols = list(const.BASE_COLS.values()) + list(const.FIELD_PLAYER_COLS.values())
+        to_test = test_row[target_cols]
+    elif position == 'GK':
+        target_cols = list(const.BASE_COLS.values()) + list(const.GOALKEEPER_COLS.values())
+        to_test = test_row[target_cols]
+    else:
+        to_test = None
+    pls = Players()
+    player_det = pls.get_player_by_name(player_name)
+    if player_det is None:  # Test null return
+        assert player_det == to_test
+    else:
+        for col in player_det.columns:
+            assert player_det[col].values[0] == to_test[col].values[0]
