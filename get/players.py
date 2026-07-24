@@ -34,7 +34,9 @@ class Players:
 
     def get_player_by_name(self, player_name: str) -> Union[None, pd.DataFrame]:
         """Get player details by name."""
-        player_detail = self.all_players[self.all_players['player'] == player_name]
+        player_detail = self.all_players[
+            self.all_players['player'].str.lower() == player_name.lower()
+        ]
         player_detail = player_detail.fillna('')
         if len(player_detail) == 0:
             return None

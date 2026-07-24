@@ -27,11 +27,17 @@ def test_get_player_summaries():
         ('Luca Zidane', 'GK'),
         ('None', 'None'),
         ('Carlos Santana', 'None'),  # Random name not in database
+        ('amine gouiri', 'FW'),  # Test lower case
+        ('LUCA ZIDANE', 'GK'),  # Test upper case
+        ('lUCa zIdANE', 'GK'),  # Test random case
 ])
 def test_get_player_by_name(player_name, position):
     test_data_path = Path('tests/resources/sample_player_data.csv')
     test_data = pd.read_csv(test_data_path)
-    test_row = test_data[test_data['player'] == player_name].fillna('')
+    # Capitalize to match test resources
+    pn = [name.capitalize() for name in player_name.split(' ')]
+    pn_formatted = ' '.join(pn)
+    test_row = test_data[test_data['player'] == pn_formatted].fillna('')
     # Reset column names to match output of get_player_by_name()
     rename_dict = const.PLAYER_COLS
     test_row = test_row.rename(columns=rename_dict)
