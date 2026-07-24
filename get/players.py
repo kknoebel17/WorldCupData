@@ -24,17 +24,11 @@ class Players:
 
     def get_player_summaries(self) -> pd.DataFrame:
         """Get summary information for all players in the database."""
-        players_summary = []
-        # Only grab summary information
-        for player in self.all_players:
-            this_entry = player[:7]
-            players_summary.append(this_entry)
-        player_cols = list(const.PLAYER_COLS.values())
-        cols_to_use = player_cols[:len(players_summary[0])]
-        df_players_summary = pd.DataFrame(
-            data=players_summary,
-            columns=cols_to_use,
-        )
+        df_players_summary = self.all_players
+        rename_dict = const.PLAYER_COLS
+        cols_to_use = list(const.PLAYER_COLS.values())[:7]
+        df_players_summary = df_players_summary.rename(columns=rename_dict)
+        df_players_summary = df_players_summary[cols_to_use]
 
         return df_players_summary
 
