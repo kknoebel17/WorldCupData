@@ -42,25 +42,36 @@ jobs:
         pip install pytest python-dotenv psycopg2-binary
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-    - name: Install PostgreSQL client
-      run: sudo apt-get update && sudo apt-get install -y postgresql-client
+    - name: Install PostgreSQL client and dependencies
+      run: |
+        sudo apt-get update && sudo apt-get install -y postgresql-client
+        pip install pandas sqlalchemy psycopg2-binary
 
     - name: Create database schema and tables
       env:
         PGPASSWORD: ${{ secrets.DB_PASSWORD }}
       run: |
-        # Create the schema
+        # Ensure the target schema exists
         psql -h localhost -U ${{ secrets.DB_USER }} -d ${{ secrets.DB_NAME }} -c "CREATE SCHEMA IF NOT EXISTS worldcup26;"
         
-        # Create the table matching your exact CSV columns (adjust data types as needed)
-        psql -h localhost -U ${{ secrets.DB_USER }} -d ${{ secrets.DB_NAME }} -c "
-          CREATE TABLE IF NOT EXISTS worldcup26.players (
-            id SERIAL PRIMARY KEY,
-            name VARCHAR(255)
-            -- Add your other CSV columns here (e.g., position VARCHAR(50), age INT)
-          );"
+        # Run a clean inline Python script to auto-generate columns from the CSV structure
+        python -c "
+        import pandas as pd
+        from sqlalchemy import create_engine
         
-        # Import the sample CSV data directly into the Postgres container
+        # Read only the headers and structure
+        df = pd.read_csv('tests/resources/sample_player_data.csv', nrows=5)
+        
+        # Build the engine URL
+        db_url = 'postgresql://'+'${{ secrets.DB_USER }}'+':'+'${{ secrets.DB_PASSWORD }}'+'@localhost:5432/'+'${{ secrets.DB_NAME }}'
+        engine = create_engine(db_url)
+        
+        # This auto-detects all your columns and creates the table with matching names
+        df.head(0).to_sql('players', engine, schema='worldcup26', if_exists='replace', index=False)
+        print('Table structure dynamically generated successfully!')
+        "
+        
+        # Import the sample CSV data directly into the newly created structure
         psql -h localhost -U ${{ secrets.DB_USER }} -d ${{ secrets.DB_NAME }} -c "\copy worldcup26.players FROM 'tests/resources/sample_player_data.csv' DELIMITER ',' CSV HEADER;"
     
 
