@@ -9,7 +9,7 @@ from psycopg2 import OperationalError
 
 class SQLAccess:
 
-    def __int__(self):
+    def __init__(self):
         credentials: Dict[str, str] = self._get_credentials()
         self.database = credentials['database']
         self.user = credentials['user']
