@@ -5,6 +5,31 @@ import numpy as np
 from access.relational import SQLAccess
 from get.players import Players
 
+# Helper functions
+def get_autosized_columns(df, min_px=80, max_px=400, char_multiplier=9):
+    """
+    Scans a DataFrame to calculate pixel widths based on text length.
+    Safely converts NumPy int64 values to standard Python integers for JSON serialization.
+    """
+    column_config = {}
+    for col in df.columns:
+        # Check max string length of the data rows
+        max_cell_len = df[col].astype(str).map(len).max() if not df.empty else 0
+        # Check string length of the column header itself
+        max_header_len = len(str(col))
+
+        # Determine the longest string footprint
+        longest_len = max(max_cell_len, max_header_len)
+
+        # Calculate visual pixel width (adding ~25px buffer for cell padding/icons)
+        calculated_width = (longest_len * char_multiplier) + 25
+        final_width = max(min_px, min(max_px, calculated_width))
+
+        # CRITICAL FIX: Cast final_width to a native Python int so Streamlit can serialize it to JSON
+        column_config[col] = st.column_config.Column(width=int(final_width))
+
+    return column_config
+
 # State
 if "active_player_name" not in st.session_state:
     st.session_state.active_player_name = ""
@@ -58,12 +83,15 @@ st.title('Players of the 2026 FIFA World Cup')
 st.subheader('Player summaries')
 
 # All players table
+# Generate layout configurations dynamically for the main table
+main_table_configs = get_autosized_columns(st.session_state.my_data)
 event = st.dataframe(
     st.session_state.my_data,
     hide_index=True,
     on_select="rerun",
     selection_mode="single-cell",
-    key="my_df_selection_key"
+    key="my_df_selection_key",
+    column_config=main_table_configs,
 )
 
 # Inspect click metadata from the selection wrapper
@@ -99,15 +127,12 @@ if player_name and str(player_name).strip() != "":
 
     try:
         player_det = player_det.rename(columns={0: header})
+        # Generate layout configurations dynamically
+        # for the secondary details table
+        details_table_configs = get_autosized_columns(player_det)
         st.data_editor(
             player_det,
-            column_config={
-                header: st.column_config.Column(
-                    header,
-                    width="large",
-                    required=True,
-                )
-            },
+            column_config=details_table_configs,
             hide_index=True,
             num_rows="dynamic",
             key=f"editor_{player_name}"  # Unique key prevents widget state collisions on player swap
