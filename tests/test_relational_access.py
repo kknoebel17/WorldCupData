@@ -6,7 +6,6 @@ def  test_connection(capsys):
     connxn_success = "Connection to PostgresSQL DB successful"
     connxn_closed = "PostgresSQL connection is closed"
     sa = SQLAccess()
-    sa.__int__()
     cursor = sa.create_connection()
     sa.close_connection(cursor)
     captured = capsys.readouterr()

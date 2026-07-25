@@ -16,7 +16,6 @@ GK_POS_CODE: str = 'GK'
 class Players:
     def __init__(self):
         self.sa = SQLAccess()
-        self.sa.__int__()
         cursor = self.sa.create_connection()
         self.cursor = cursor
         self.cursor.execute("SELECT * FROM worldcup26.players;")

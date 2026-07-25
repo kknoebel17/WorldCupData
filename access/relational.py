@@ -9,7 +9,7 @@ from psycopg2 import OperationalError
 
 class SQLAccess:
 
-    def __int__(self):
+    def __init__(self):
         credentials: Dict[str, str] = self._get_credentials()
         self.database = credentials['database']
         self.user = credentials['user']
@@ -58,7 +58,8 @@ class SQLAccess:
             return cursor
 
         except OperationalError as e:
-            return f"The error '{e}' occurred"
+            print(f"The error '{e}' occurred")
+            raise e
 
     def close_connection(self, cursor):
         try:

@@ -60,9 +60,9 @@ FIELD_PLAYER_COLS = {
 }
 
 GOALKEEPER_COLS =  {
-    'gk_games': 'Games Played',
+    'gk_games': 'Goalkeeper Games Played',
     'gk_games_starts': 'Starts',
-    'gk_minutes': 'Total Minutes Played',
+    'gk_minutes': 'Goalkeeper Minutes Played',
     'gk_goals_against': 'Goals Scored Against',
     'gk_goals_against_per90': 'Goals Scored Against per 90 Minutes',
     'gk_shots_on_target_against': 'Shot on Target Against',
