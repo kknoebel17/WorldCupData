@@ -72,8 +72,7 @@ jobs:
         "
         
         # Import the sample CSV data directly into the newly created structure
-        psql -h localhost -U ${{ secrets.DB_USER }} -d ${{ secrets.DB_NAME }} -c "\copy worldcup26.players FROM 'tests/resources/players.csv' DELIMITER ',' CSV HEADER;"
-    
+        psql -h localhost -U ${{ secrets.DB_USER }} -d ${{ secrets.DB_NAME }} -c "\copy worldcup26.players FROM 'tests/resources/players.csv' DELIMITER ',' CSV HEADER NULL AS '';"       
 
     - name: Run tests with pytest
       # Inject the GitHub Secrets as local environment variables for the test process
