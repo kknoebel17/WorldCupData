@@ -6,7 +6,6 @@ from dataclasses import dataclass
 class PlayerBase:
     player: str
     team: str
-    team_country: str
     position: str
     age: int
     birth_year: int

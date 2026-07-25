@@ -3,7 +3,6 @@
 BASE_COLS = {
     'player': 'Player Name',
     'team': 'Team',
-    'team_country': 'Country',
     'position': 'Position',
     'age': 'Age',
     'birth_year': 'Birth Year',

@@ -14,7 +14,7 @@ def get_autosized_columns(df, min_px=80, max_px=400, char_multiplier=9):
     column_config = {}
     for col in df.columns:
         # Check max string length of the data rows
-        max_cell_len = df[col].astype(str).map(len).max() if not df.empty else 0
+        max_cell_len = df[col].apply(str).map(len).max() if not df.empty else 0
         # Check string length of the column header itself
         max_header_len = len(str(col))
 
@@ -25,7 +25,7 @@ def get_autosized_columns(df, min_px=80, max_px=400, char_multiplier=9):
         calculated_width = (longest_len * char_multiplier) + 25
         final_width = max(min_px, min(max_px, calculated_width))
 
-        # CRITICAL FIX: Cast final_width to a native Python int so Streamlit can serialize it to JSON
+        # Cast final_width to a native Python int so Streamlit can serialize it to JSON
         column_config[col] = st.column_config.Column(width=int(final_width))
 
     return column_config
