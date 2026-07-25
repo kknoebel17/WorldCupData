@@ -9,6 +9,10 @@ from get.players import Players
 if "active_player_name" not in st.session_state:
     st.session_state.active_player_name = ""
 
+# Ensure the dataframe selection dictionary
+# exists in state so we can manipulate it
+if "my_df_selection_key" not in st.session_state:
+    st.session_state.my_df_selection_key = {"selection": {"rows": [], "cells": []}}
 
 # Resources
 @st.cache_data
@@ -27,20 +31,27 @@ if "my_data" not in st.session_state:
 
 
 # Widgets
-def handle_sidebar_search():
-    """Triggered only when a user types a name in the sidebar and hits Enter"""
-    search_value = st.session_state.sidebar_search_input
-    if search_value:
-        st.session_state.active_player_name = search_value
-
-
 with st.sidebar:
     st.header("Navigation Panel")
-    st.text_input(
-        label='Search for Player',
-        key="sidebar_search_input",
-        on_change=handle_sidebar_search
-    )
+
+    # Bundle into a Form to force click execution every single time
+    with st.form(key="sidebar_search_form", clear_on_submit=False):
+        search_value = st.text_input(
+            label='Search for Player',
+            value=st.session_state.active_player_name,  # Keeps the current active name synced visually
+            key="sidebar_search_input"
+        )
+        submit_button = st.form_submit_button(label="Search / Reset Grid")
+
+    # If the user clicks the button or
+    # presses Enter inside the form input box
+    if submit_button:
+        if search_value:
+            st.session_state.active_player_name = search_value
+
+            # Wipe out the DataFrame grid selection array instantly
+            st.session_state.my_df_selection_key = {"selection": {"rows": [], "cells": []}}
+            st.rerun()
 
 # Tables
 st.title('Players of the 2026 FIFA World Cup')
