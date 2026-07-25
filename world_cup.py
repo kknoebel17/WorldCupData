@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -6,6 +8,7 @@ from access.relational import SQLAccess
 from get.players import Players
 
 # Globals
+IMAGE_PATH = Path('images.jpeg')
 PLAYER_SUMM_TEXT = (
     "Click on a player's name to see statistics for that"
     " player below this table. You can also search for a player"
@@ -84,6 +87,9 @@ with st.sidebar:
             # Wipe out the DataFrame grid selection array instantly
             st.session_state.my_df_selection_key = {"selection": {"rows": [], "cells": []}}
             st.rerun()
+
+# Header image
+st.image(IMAGE_PATH)
 
 # Tables
 st.title('Players of the 2026 FIFA World Cup')
