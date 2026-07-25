@@ -83,10 +83,32 @@ st.title('Players of the 2026 FIFA World Cup')
 st.subheader('Player summaries')
 
 # All players table
+
+# Create a multi-column horizontal row layout to contain your text inputs
+filter_cols = st.columns(len(st.session_state.my_data.columns))
+filtered_df = st.session_state.my_data.copy()
+
+# Dynamically generate text filter input boxes for every column header profile
+for i, col_name in enumerate(st.session_state.my_data.columns):
+    with filter_cols[i]:
+        search_term = st.text_input(
+            label=f"Filter {col_name}",
+            label_visibility="collapsed",  # Hides label to look like a clean grid row
+            placeholder=f"Filter {col_name}...",
+            key=f"filter_input_{col_name}"
+        )
+        if search_term:
+            # Drop down matching records using non-case-sensitive string evaluations
+            filtered_df = filtered_df[
+                filtered_df[col_name].astype(str).str.contains(search_term, case=False, na=False)
+            ]
+
+st.divider()
+
 # Generate layout configurations dynamically for the main table
 main_table_configs = get_autosized_columns(st.session_state.my_data)
 event = st.dataframe(
-    st.session_state.my_data,
+    filtered_df.reset_index(drop=True),  # Reset index matches visual selections perfectly
     hide_index=True,
     on_select="rerun",
     selection_mode="single-cell",
@@ -107,10 +129,8 @@ if selected_cells:
 
         # Explicitly verify the selected column name
         if column_name == "Player Name":
-            # Extract player value directly using the row number index mapping
-            clicked_cell_value = st.session_state.my_data.iloc[int(row_idx)]["Player Name"]
-
-            # Save the value securely to state before triggering any rerun
+            # Extract names from the filtered table instance safely mapping row indices
+            clicked_cell_value = filtered_df.reset_index(drop=True).iloc[int(row_idx)]["Player Name"]
             st.session_state.active_player_name = str(clicked_cell_value)
 
     except Exception as e:
