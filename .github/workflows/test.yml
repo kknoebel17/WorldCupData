@@ -54,25 +54,22 @@ jobs:
         # Ensure the target schema exists
         psql -h localhost -U ${{ secrets.DB_USER }} -d ${{ secrets.DB_NAME }} -c "CREATE SCHEMA IF NOT EXISTS worldcup26;"
         
-        # Run a clean inline Python script to auto-generate columns from the CSV structure
+        # Run Python to auto-create the table and insert the data safely
         python -c "
         import pandas as pd
         from sqlalchemy import create_engine
         
-        # Read only the headers and structure
-        df = pd.read_csv('tests/resources/players.csv', nrows=5)
+        # Read the full CSV file
+        df = pd.read_csv('tests/resources/players.csv')
         
         # Build the engine URL
-        db_url = 'postgresql://'+'${{ secrets.DB_USER }}'+':'+'${{ secrets.DB_PASSWORD }}'+'@localhost:5432/'+'${{ secrets.DB_NAME }}'
+        db_url = f'postgresql://${{ secrets.DB_USER }}:${{ secrets.DB_PASSWORD }}@localhost:5432/${{ secrets.DB_NAME }}'
         engine = create_engine(db_url)
         
-        # This auto-detects all your columns and creates the table with matching names
-        df.head(0).to_sql('players', engine, schema='worldcup26', if_exists='replace', index=False)
-        print('Table structure dynamically generated successfully!')
+        # Creates the structure AND inserts all rows safely
+        df.to_sql('players', engine, schema='worldcup26', if_exists='replace', index=False)
+        print('Table structure and data successfully imported via Pandas!')
         "
-        
-        # Import the sample CSV data directly into the newly created structure
-        psql -h localhost -U ${{ secrets.DB_USER }} -d ${{ secrets.DB_NAME }} -c "\copy worldcup26.players FROM 'tests/resources/players.csv' DELIMITER ',' CSV HEADER NULL AS '';"       
 
     - name: Run tests with pytest
       # Inject the GitHub Secrets as local environment variables for the test process
