@@ -141,6 +141,7 @@ player_name = st.session_state.active_player_name
 
 if player_name and str(player_name).strip() != "":
     st.divider()  # Visual break for clarity
+    st.subheader('Single player statistics')
     header = f"World Cup 2026 statistics for {player_name}"
     players = Players()
     player_det = players.get_player_by_name(player_name)
