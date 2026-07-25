@@ -156,11 +156,15 @@ if player_name and str(player_name).strip() != "":
 
     try:
         player_det = player_det.rename(columns={0: header})
-        # Generate layout configurations dynamically
-        # for the secondary details table
-        details_table_configs = get_autosized_columns(player_det)
+        # Move the index into a standard data column so our autosizer can see it
+        # If your index doesn't have a name, we temporarily call it "Metric"
+        index_name = player_det.index.name if player_det.index.name else "Metric"
+        player_det_display = player_det.reset_index(names=index_name)
+
+        # Generate layout configurations dynamically (now includes the index column)
+        details_table_configs = get_autosized_columns(player_det_display)
         st.data_editor(
-            player_det,
+            player_det_display,
             column_config=details_table_configs,
             hide_index=True,
             num_rows="dynamic",
