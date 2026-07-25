@@ -17,7 +17,7 @@ def test_init():
 def test_get_player_summaries():
     pls = Players()
     all_pls = pls.get_player_summaries()
-    assert all_pls.columns.tolist() == list(const.PLAYER_COLS.values())[:7]
+    assert all_pls.columns.tolist() == list(const.PLAYER_COLS.values())[:6]
     assert len(all_pls) == UNIQUE_PLAYERS
 
 @pytest.mark.parametrize(
