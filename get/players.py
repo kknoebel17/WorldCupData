@@ -23,13 +23,15 @@ class Players:
         self.all_players = pd.DataFrame(cursor.fetchall(), columns=[desc[0] for desc in cursor.description])
         # Lower player names and remove accents
         self.all_players = helpers.clean_player_name(self.all_players)
+        # Drop Country column as it always matches Team column
+        self.all_players = self.all_players.drop(columns=['team_country'])
         self.sa.close_connection(self.cursor)
 
     def get_player_summaries(self) -> pd.DataFrame:
         """Get summary information for all players in the database."""
         df_players_summary = self.all_players
         rename_dict = const.PLAYER_COLS
-        cols_to_use = list(const.PLAYER_COLS.values())[:7]
+        cols_to_use = list(const.PLAYER_COLS.values())[:6]
         df_players_summary = df_players_summary.rename(columns=rename_dict)
         df_players_summary = df_players_summary[cols_to_use]
 
@@ -73,7 +75,7 @@ class Players:
             data=player_detail_corr,
         )
 
-        return df_det_corr
+        return df_det_corr.T
 
 
 
