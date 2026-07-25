@@ -58,7 +58,8 @@ class SQLAccess:
             return cursor
 
         except OperationalError as e:
-            return f"The error '{e}' occurred"
+            print(f"The error '{e}' occurred")
+            raise e
 
     def close_connection(self, cursor):
         try:
