@@ -60,7 +60,7 @@ jobs:
         from sqlalchemy import create_engine
         
         # Read only the headers and structure
-        df = pd.read_csv('tests/resources/players.csv')
+        df = pd.read_csv('tests/resources/players.csv', nrows=5)
         
         # Build the engine URL
         db_url = 'postgresql://'+'${{ secrets.DB_USER }}'+':'+'${{ secrets.DB_PASSWORD }}'+'@localhost:5432/'+'${{ secrets.DB_NAME }}'
@@ -72,7 +72,7 @@ jobs:
         "
         
         # Import the sample CSV data directly into the newly created structure
-        psql -h localhost -U ${{ secrets.DB_USER }} -d ${{ secrets.DB_NAME }} -c "\copy worldcup26.players FROM 'tests/resources/sample_player_data.csv' DELIMITER ',' CSV HEADER;"
+        psql -h localhost -U ${{ secrets.DB_USER }} -d ${{ secrets.DB_NAME }} -c "\copy worldcup26.players FROM 'tests/resources/players.csv' DELIMITER ',' CSV HEADER;"
     
 
     - name: Run tests with pytest
