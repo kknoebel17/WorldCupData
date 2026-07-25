@@ -1,10 +1,9 @@
+"""Webpage for FIFA World Cup 226 data using streamlit."""
+
 from pathlib import Path
 
 import streamlit as st
-import pandas as pd
-import numpy as np
 
-from access.relational import SQLAccess
 from get.players import Players
 
 # Globals
