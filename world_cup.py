@@ -5,6 +5,13 @@ import numpy as np
 from access.relational import SQLAccess
 from get.players import Players
 
+# Globals
+PLAYER_SUMM_TEXT = (
+    "Click on a player's name to see statistics for that"
+    " player below this table. You can also search for a player"
+    " by name in the Navigation Panel to the left."
+)
+
 # Helper functions
 def get_autosized_columns(df, min_px=80, max_px=400, char_multiplier=9):
     """
@@ -84,6 +91,7 @@ st.subheader('Player summaries')
 
 # All players table
 
+st.caption(PLAYER_SUMM_TEXT)
 # Create a multi-column horizontal row layout to contain your text inputs
 filter_cols = st.columns(len(st.session_state.my_data.columns))
 filtered_df = st.session_state.my_data.copy()
