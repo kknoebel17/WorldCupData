@@ -45,6 +45,7 @@ jobs:
     - name: Run tests with pytest
       # Inject the GitHub Secrets as local environment variables for the test process
       env:
+        PYTHONPATH: .
         DB_HOST: ${{ secrets.DB_HOST }}
         DB_NAME: ${{ secrets.DB_NAME }}
         DB_USER: ${{ secrets.DB_USER }}
