@@ -176,7 +176,7 @@ if player_name and str(player_name).strip() != "":
         # strings to prevent PyArrow serialization errors
         player_det[header] = player_det[header].astype(str)
 
-        # Move the index into a standard data column so our autosizer can see it
+        # Move the index into a standard data column
         index_name = player_det.index.name if player_det.index.name else "Metric"
         player_det_display = player_det.reset_index(names=index_name)
 
