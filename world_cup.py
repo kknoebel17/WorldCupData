@@ -3,6 +3,12 @@
 from pathlib import Path
 
 import streamlit as st
+from st_aggrid import (
+    AgGrid,
+    ColumnsAutoSizeMode,
+    GridOptionsBuilder,
+    GridUpdateMode,
+)
 
 from get.players import Players
 
@@ -43,11 +49,6 @@ def get_autosized_columns(df, min_px=80, max_px=400, char_multiplier=9):
 if "active_player_name" not in st.session_state:
     st.session_state.active_player_name = ""
 
-# Ensure the dataframe selection dictionary
-# exists in state so we can manipulate it
-if "my_df_selection_key" not in st.session_state:
-    st.session_state.my_df_selection_key = {"selection": {"rows": [], "cells": []}}
-
 # Resources
 @st.cache_data
 def get_all_players():
@@ -62,7 +63,6 @@ data_load_state.text("Done! All 2026 FIFA World Cup players are here.")
 
 if "my_data" not in st.session_state:
     st.session_state.my_data = all_players.reset_index(drop=True)
-
 
 # Widgets
 with st.sidebar:
@@ -83,8 +83,13 @@ with st.sidebar:
         if search_value:
             st.session_state.active_player_name = search_value
 
-            # Wipe out the DataFrame grid selection array instantly
-            st.session_state.my_df_selection_key = {"selection": {"rows": [], "cells": []}}
+            # Force the grid to redraw from scratch without old selections
+            # By changing the version key, it wipes any
+            # active row clicks out of AgGrid memory
+            if "grid_version" not in st.session_state:
+                st.session_state.grid_version = 1
+            st.session_state.grid_version += 1
+
             st.rerun()
 
 # Header image
@@ -118,36 +123,45 @@ for i, col_name in enumerate(st.session_state.my_data.columns):
 
 st.divider()
 
-# Generate layout configurations dynamically for the main table
-main_table_configs = get_autosized_columns(st.session_state.my_data)
-event = st.dataframe(
-    filtered_df.reset_index(drop=True),  # Reset index matches visual selections perfectly
-    hide_index=True,
-    on_select="rerun",
-    selection_mode="single-cell",
-    key="my_df_selection_key",
-    column_config=main_table_configs,
+# Build aggrid table
+grid_builder = GridOptionsBuilder.from_dataframe(filtered_df)
+grid_builder.configure_default_column(filterable=True, sortable=True)
+grid_builder.configure_selection(
+    selection_mode="single",
+    use_checkbox=False,
+)
+gridOptions = grid_builder.build()
+
+# Fallback initializer for our dynamic cache buster key
+if "grid_version" not in st.session_state:
+    st.session_state.grid_version = 1
+
+event  = AgGrid(
+    filtered_df,
+    gridOptions=gridOptions,
+    columns_auto_size_mode=ColumnsAutoSizeMode.FIT_CONTENTS,
+    update_mode=GridUpdateMode.SELECTION_CHANGED,
+    key=f"main_player_grid_v{st.session_state.grid_version}",
 )
 
-# Inspect click metadata from the selection wrapper
-selection = event.get("selection", {})
-selected_cells = selection.get("cells", [])
+# Parse selected row safely using ag-grid standard format
+selected_rows = event.get("selected_rows", [])
 
-if selected_cells:
-    try:
-        # Unpack your coordinate layout structure: (row_idx, column_name)
-        inner_coordinate = selected_cells[0]
-        row_idx = inner_coordinate[0]
-        column_name = inner_coordinate[1]
+# Handle varying AgGrid structure variants across library versions
+if selected_rows is not None and len(selected_rows) > 0:
+    # If the version returns a dataframe context structure
+    if hasattr(selected_rows, "to_dict"):
+        selected_player = selected_rows.iloc[0]["Player Name"]
+    # If the version returns a list of dictionaries format
+    elif isinstance(selected_rows, list):
+        selected_player = selected_rows[0]["Player Name"]
+    else:
+        selected_player = selected_rows["Player Name"]
 
-        # Explicitly verify the selected column name
-        if column_name == "Player Name":
-            # Extract names from the filtered table instance safely mapping row indices
-            clicked_cell_value = filtered_df.reset_index(drop=True).iloc[int(row_idx)]["Player Name"]
-            st.session_state.active_player_name = str(clicked_cell_value)
-
-    except Exception as e:
-        st.error(f"Unpacking Error: {e} | Raw Data Structure: {selected_cells}")
+    # Trigger an immediate visual refresh if a new candidate is targeted
+    if selected_player != st.session_state.active_player_name:
+        st.session_state.active_player_name = selected_player
+        st.rerun()
 
 # Single player table
 player_name = st.session_state.active_player_name
@@ -166,14 +180,13 @@ if player_name and str(player_name).strip() != "":
         index_name = player_det.index.name if player_det.index.name else "Metric"
         player_det_display = player_det.reset_index(names=index_name)
 
-        # Generate layout configurations dynamically (now includes the index column)
-        details_table_configs = get_autosized_columns(player_det_display)
-        st.data_editor(
+        grid_builder = GridOptionsBuilder.from_dataframe(player_det_display)
+        grid_builder.configure_default_column(filterable=True, sortable=True)
+        gridOptions = grid_builder.build()
+        event = AgGrid(
             player_det_display,
-            column_config=details_table_configs,
-            hide_index=True,
-            num_rows="dynamic",
-            key=f"editor_{player_name}"  # Unique key prevents widget state collisions on player swap
+            gridOptions=gridOptions,
+            key=f"single_player_grid",
         )
     except AttributeError:
         pass
