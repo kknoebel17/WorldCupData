@@ -12,6 +12,7 @@ from st_aggrid import (
 from get.players import Players
 
 # Globals
+AGGRID_THEME = 'material' # options: balham, streamlit, alpine, balham, material
 IMAGE_PATH = Path('images.jpeg')
 PLAYER_SUMM_TEXT = (
     "Click on a player's name to see statistics for that"
@@ -138,6 +139,7 @@ event  = AgGrid(
     columns_auto_size_mode=ColumnsAutoSizeMode.FIT_CONTENTS,
     update_on=['selectionChanged'],
     key=f"main_player_grid_v{st.session_state.grid_version}",
+    theme=AGGRID_THEME,
 )
 
 # Parse selected row safely using ag-grid standard format
@@ -189,6 +191,7 @@ if player_name and str(player_name).strip() != "":
             columns_auto_size_mode=ColumnsAutoSizeMode.FIT_CONTENTS,  # Keeps column styling clean
             update_on=['selectionChanged'],
             key=f"single_player_grid_{player_name}",  # Prevents cross-player state collisions
+            theme=AGGRID_THEME,
         )
     except AttributeError:
         pass
