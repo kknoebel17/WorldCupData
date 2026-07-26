@@ -20,31 +20,6 @@ PLAYER_SUMM_TEXT = (
     " by name in the Navigation Panel to the left."
 )
 
-# Helper functions
-def get_autosized_columns(df, min_px=80, max_px=400, char_multiplier=9):
-    """
-    Scans a DataFrame to calculate pixel widths based on text length.
-    Safely converts NumPy int64 values to standard Python integers for JSON serialization.
-    """
-    column_config = {}
-    for col in df.columns:
-        # Check max string length of the data rows
-        max_cell_len = df[col].apply(str).map(len).max() if not df.empty else 0
-        # Check string length of the column header itself
-        max_header_len = len(str(col))
-
-        # Determine the longest string footprint
-        longest_len = max(max_cell_len, max_header_len)
-
-        # Calculate visual pixel width (adding ~25px buffer for cell padding/icons)
-        calculated_width = (longest_len * char_multiplier) + 25
-        final_width = max(min_px, min(max_px, calculated_width))
-
-        # Cast final_width to a native Python int so Streamlit can serialize it to JSON
-        column_config[col] = st.column_config.Column(width=int(final_width))
-
-    return column_config
-
 # State
 if "active_player_name" not in st.session_state:
     st.session_state.active_player_name = ""
