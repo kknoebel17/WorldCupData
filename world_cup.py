@@ -100,32 +100,54 @@ st.title('Players of the 2026 FIFA World Cup')
 st.subheader('Player summaries')
 
 # All players table
-
 st.caption(PLAYER_SUMM_TEXT)
-# Create a multi-column horizontal row layout to contain your text inputs
-filter_cols = st.columns(len(st.session_state.my_data.columns))
+
+# Provide an elegant multi-select dropdown
+# for categorical text columns
+col1, col2, col3 = st.columns(3)
+with col1:
+    # Extracts all non-null, unique teams sorted alphabetically
+    unique_teams = sorted(st.session_state.my_data["Team"].dropna().unique())
+    selected_teams = st.multiselect(
+        "Filter by Team",
+        options=unique_teams,
+        default=[] # Empty means "Show all"
+    )
+with col2:
+    # Extracts all non-null, unique positions sorted alphabetically
+    unique_positions = sorted(st.session_state.my_data["Position"].dropna().unique())
+    selected_positions = st.multiselect(
+        "Filter by Position",
+        options=unique_positions,
+        default=[]
+    )
+with col3:
+    # Extracts all non-null, unique clubs sorted alphabetically
+    unique_clubs = sorted(st.session_state.my_data["Club"].dropna().unique())
+    selected_clubs = st.multiselect(
+        "Filter by Club",
+        options=unique_clubs,
+        default=[]
+    )
+
+# Filter down your dataframe behind the scenes using standard Python logic
 filtered_df = st.session_state.my_data.copy()
 
-# Dynamically generate text filter input boxes for every column header profile
-for i, col_name in enumerate(st.session_state.my_data.columns):
-    with filter_cols[i]:
-        search_term = st.text_input(
-            label=f"Filter {col_name}",
-            label_visibility="collapsed",  # Hides label to look like a clean grid row
-            placeholder=f"Filter {col_name}...",
-            key=f"filter_input_{col_name}"
-        )
-        if search_term:
-            # Drop down matching records using non-case-sensitive string evaluations
-            filtered_df = filtered_df[
-                filtered_df[col_name].astype(str).str.contains(search_term, case=False, na=False)
-            ]
+if selected_teams:
+    filtered_df = filtered_df[filtered_df["Team"].isin(selected_teams)]
+if selected_positions:
+    filtered_df = filtered_df[filtered_df["Position"].isin(selected_positions)]
+if selected_clubs:
+    filtered_df = filtered_df[filtered_df["Club"].isin(selected_clubs)]
 
 st.divider()
 
 # Build aggrid table
 grid_builder = GridOptionsBuilder.from_dataframe(filtered_df)
-grid_builder.configure_default_column(filterable=True, sortable=True)
+grid_builder.configure_default_column(
+    filterable=True,
+    sortable=True,
+)
 grid_builder.configure_selection(
     selection_mode="single",
     use_checkbox=False,
