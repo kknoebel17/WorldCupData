@@ -1,5 +1,7 @@
 dotenv>=0.9.9
 streamlit>=1.60.0
+streamlit-pydantic>=0.6.0
 pandas>=3.0.5
 psycopg2-binary>=2.9.12
+pydantic==1.10.26  # streamlit pydantic works with pydantic>=1.9.0,<2.0
 pytest>=9.1.1

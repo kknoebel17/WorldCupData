@@ -3,12 +3,14 @@
 from dataclasses import asdict
 from typing import Dict, List, Union
 
+import numpy as np
 import pandas as pd
+import pydantic
 
 import constants as const
 import get.helpers as helpers
 from access.relational import SQLAccess
-from models.players import FieldPlayer, GoalKeeper
+from models.players import PlayerBase, FieldPlayer, GoalKeeper
 
 # Globals
 GK_POS_CODE: str = 'GK'
@@ -56,13 +58,21 @@ class Players:
         if is_gk:  # Assign data to correct type
             for val in player_detail.columns:
                 if (val in const.GOALKEEPER_COLS) or (val in const.BASE_COLS):
-                    detail_map[val] = player_detail[val].values[0]
-            player_detail = asdict(GoalKeeper(**detail_map))
+                    detail_map[val] = self._clean_data_types(
+                        data_input=player_detail[val].values[0],
+                        key_str=val,
+                        model=GoalKeeper,
+                    )
+            player_model = GoalKeeper(**detail_map)
         else:
             for val in player_detail.columns:
                 if (val in const.FIELD_PLAYER_COLS) or (val in const.BASE_COLS):
-                    detail_map[val] = player_detail[val].values[0]
-            player_detail = asdict(FieldPlayer(**detail_map))
+                    detail_map[val] = self._clean_data_types(
+                        data_input=player_detail[val].values[0],
+                        key_str=val,
+                        model=FieldPlayer,
+                    )
+            player_model = FieldPlayer(**detail_map)
 
         # Reset column names
         player_detail_corr = {
@@ -74,7 +84,43 @@ class Players:
             data=player_detail_corr,
         )
 
-        return df_det_corr.T
+        return player_model
+
+    # Helper methods
+    def _clean_data_types(
+            self,
+            data_input: Union[str, float, int],
+            key_str: str,
+            model,
+    ) -> Union[str, float, int]:
+        try:
+            base_annotations = PlayerBase.__annotations__
+            annotations = model.__annotations__
+            total_annotations = base_annotations | annotations
+            if isinstance(data_input, total_annotations[key_str]):
+                return data_input
+            else:
+                if total_annotations[key_str] is float:
+                    try:
+                        return float(data_input)
+                    except ValueError:
+                        return 0
+                elif total_annotations[key_str] is int:
+                    try:
+                        return int(data_input)
+                    except ValueError:
+                        return 0
+                else:  # string
+                    try:
+                        return str(data_input)
+                    except ValueError:
+                        return ""
+        except AttributeError:
+            error_msg = f"{key_str} is not a sting, float, or int."
+            raise AttributeError(error_msg)
+
+
+
 
 
 

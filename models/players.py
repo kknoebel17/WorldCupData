@@ -1,9 +1,8 @@
 """Dataclasses used to create page details for the Player class."""
 
-from dataclasses import dataclass
+from pydantic import BaseModel
 
-@dataclass
-class PlayerBase:
+class PlayerBase(BaseModel):
     player: str
     team: str
     position: str
@@ -28,7 +27,6 @@ class PlayerBase:
     pens_conceded: int
     own_goals: int
 
-@dataclass
 class FieldPlayer(PlayerBase):
     minutes: int
     minutes_90s: float
@@ -61,7 +59,6 @@ class FieldPlayer(PlayerBase):
     tackles_won: int
     pens_won: int
 
-@dataclass
 class GoalKeeper(PlayerBase):
     gk_games: int
     gk_games_starts: int

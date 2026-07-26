@@ -2,9 +2,13 @@
 
 from pathlib import Path
 
+import pandas as pd
 import streamlit as st
+import streamlit_pydantic as sp
 
 from get.players import Players
+from models.players import PlayerBase, FieldPlayer, GoalKeeper
+
 
 # Globals
 IMAGE_PATH = Path('images.jpeg')
@@ -43,10 +47,32 @@ def get_autosized_columns(df, min_px=80, max_px=400, char_multiplier=9):
 if "active_player_name" not in st.session_state:
     st.session_state.active_player_name = ""
 
-# Ensure the dataframe selection dictionary
-# exists in state so we can manipulate it
-if "my_df_selection_key" not in st.session_state:
-    st.session_state.my_df_selection_key = {"selection": {"rows": [], "cells": []}}
+
+def handle_selection():
+    # Access the widget's internal state dict via its assigned key
+    selection_data = st.session_state.my_df_selection_key
+    selected_cells = selection_data.get("selection", {}).get("cells", [])
+
+    if selected_cells:
+        try:
+            inner_coordinate = selected_cells[0]
+            row_idx = int(inner_coordinate[0])
+            column_identifier = inner_coordinate[1]
+
+            # Get the correct filtered dataframe instance
+            current_reset_df = filtered_df.reset_index(drop=True)
+
+            if isinstance(column_identifier, int):
+                column_name = current_reset_df.columns[column_identifier]
+            else:
+                column_name = str(column_identifier)
+
+            if column_name == "Player Name":
+                clicked_cell_value = current_reset_df.iloc[row_idx]["Player Name"]
+                st.session_state.active_player_name = str(clicked_cell_value)
+        except Exception as e:
+            st.error(f"Selection Callback Error: {e}")
+
 
 # Resources
 @st.cache_data
@@ -120,60 +146,52 @@ st.divider()
 
 # Generate layout configurations dynamically for the main table
 main_table_configs = get_autosized_columns(st.session_state.my_data)
-event = st.dataframe(
-    filtered_df.reset_index(drop=True),  # Reset index matches visual selections perfectly
+
+# FIXED: Replaced on_select="rerun" with our safe state logic callback execution handler
+st.dataframe(
+    filtered_df.reset_index(drop=True),
     hide_index=True,
-    on_select="rerun",
+    on_select=handle_selection,
     selection_mode="single-cell",
     key="my_df_selection_key",
     column_config=main_table_configs,
 )
 
-# Inspect click metadata from the selection wrapper
-selection = event.get("selection", {})
-selected_cells = selection.get("cells", [])
-
-if selected_cells:
-    try:
-        # Unpack your coordinate layout structure: (row_idx, column_name)
-        inner_coordinate = selected_cells[0]
-        row_idx = inner_coordinate[0]
-        column_name = inner_coordinate[1]
-
-        # Explicitly verify the selected column name
-        if column_name == "Player Name":
-            # Extract names from the filtered table instance safely mapping row indices
-            clicked_cell_value = filtered_df.reset_index(drop=True).iloc[int(row_idx)]["Player Name"]
-            st.session_state.active_player_name = str(clicked_cell_value)
-
-    except Exception as e:
-        st.error(f"Unpacking Error: {e} | Raw Data Structure: {selected_cells}")
-
 # Single player table
 player_name = st.session_state.active_player_name
 
 if player_name and str(player_name).strip() != "":
-    st.divider()  # Visual break for clarity
+    st.divider()
     st.subheader('Single player statistics')
     header = f"World Cup 2026 statistics for {player_name}"
+
     players = Players()
-    player_det = players.get_player_by_name(player_name)
+    player_model = players.get_player_by_name(player_name)
 
-    try:
-        player_det = player_det.rename(columns={0: header})
-        # Move the index into a standard data column so our autosizer can see it
-        # If your index doesn't have a name, we temporarily call it "Metric"
-        index_name = player_det.index.name if player_det.index.name else "Metric"
-        player_det_display = player_det.reset_index(names=index_name)
+    if player_model is not None:
+        try:
+            # Convert Pydantic model to a standard python dictionary
+            player_dict = player_model.dict()
 
-        # Generate layout configurations dynamically (now includes the index column)
-        details_table_configs = get_autosized_columns(player_det_display)
-        st.data_editor(
-            player_det_display,
-            column_config=details_table_configs,
-            hide_index=True,
-            num_rows="dynamic",
-            key=f"editor_{player_name}"  # Unique key prevents widget state collisions on player swap
-        )
-    except AttributeError:
-        pass
+            # Build a clean 2-column DataFrame (Metric Name vs Value)
+            sp.pydantic_output(player_model)
+            # if player_det_display:
+            #     st.json(player_det_display.model_dump())
+
+            # # 3. Format metric names for cleaner visual display (Optional but recommended)
+            # player_det_display["Metric"] = player_det_display["Metric"].str.replace("_", " ").str.title()
+            #
+            # # 4. Generate configurations and render
+            # details_table_configs = get_autosized_columns(player_det_display)
+            # st.data_editor(
+            #     player_det_display,
+            #     column_config=details_table_configs,
+            #     hide_index=True,
+            #     num_rows="dynamic",
+            #     key=f"editor_{player_name}"
+            # )
+        except Exception as e:
+            st.error(f"Display Error: {e}")
+    else:
+        st.warning(f"No database records found matching: {player_name}")
+
