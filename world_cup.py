@@ -175,8 +175,12 @@ if player_name and str(player_name).strip() != "":
 
     try:
         player_det = player_det.rename(columns={0: header})
+
+        # Force the stats column values to
+        # strings to prevent PyArrow serialization errors
+        player_det[header] = player_det[header].astype(str)
+
         # Move the index into a standard data column so our autosizer can see it
-        # If your index doesn't have a name, we temporarily call it "Metric"
         index_name = player_det.index.name if player_det.index.name else "Metric"
         player_det_display = player_det.reset_index(names=index_name)
 
@@ -186,7 +190,8 @@ if player_name and str(player_name).strip() != "":
         event = AgGrid(
             player_det_display,
             gridOptions=gridOptions,
-            key=f"single_player_grid",
+            columns_auto_size_mode=ColumnsAutoSizeMode.FIT_CONTENTS,  # Keeps column styling clean
+            key=f"single_player_grid_{player_name}",  # Prevents cross-player state collisions
         )
     except AttributeError:
         pass
