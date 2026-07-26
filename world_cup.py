@@ -1,7 +1,5 @@
 """Webpage for FIFA World Cup 226 data using streamlit."""
 
-from pathlib import Path
-
 import streamlit as st
 from st_aggrid import (
     AgGrid,
@@ -12,8 +10,14 @@ from st_aggrid import (
 from get.players import Players
 
 # Globals
+st.set_page_config(
+    page_title=None,
+    page_icon=None,
+    layout="centered",
+    initial_sidebar_state="expanded",
+    menu_items=None
+)
 AGGRID_THEME = 'material' # options: balham, streamlit, alpine, balham, material
-IMAGE_PATH = Path('images.jpeg')
 PLAYER_SUMM_TEXT = (
     "Click on a player's name to see statistics for that"
     " player below this table. You can also search for a player"
@@ -46,7 +50,7 @@ with st.sidebar:
     # Bundle into a Form to force click execution every single time
     with st.form(key="sidebar_search_form", clear_on_submit=False):
         search_value = st.text_input(
-            label='Search for Player',
+            label='🏃🏻‍♂️ Search for Player',
             value=st.session_state.active_player_name,  # Keeps the current active name synced visually
             key="sidebar_search_input"
         )
@@ -66,9 +70,6 @@ with st.sidebar:
             st.session_state.grid_version += 1
 
             st.rerun()
-
-# Header image
-st.image(IMAGE_PATH)
 
 # Tables
 st.title('Players of the 2026 FIFA World Cup')
