@@ -7,7 +7,6 @@ from st_aggrid import (
     AgGrid,
     ColumnsAutoSizeMode,
     GridOptionsBuilder,
-    GridUpdateMode,
 )
 
 from get.players import Players
@@ -137,7 +136,7 @@ event  = AgGrid(
     filtered_df,
     gridOptions=gridOptions,
     columns_auto_size_mode=ColumnsAutoSizeMode.FIT_CONTENTS,
-    update_mode=GridUpdateMode.SELECTION_CHANGED,
+    update_on=['selectionChanged'],
     key=f"main_player_grid_v{st.session_state.grid_version}",
 )
 
@@ -188,6 +187,7 @@ if player_name and str(player_name).strip() != "":
             player_det_display,
             gridOptions=gridOptions,
             columns_auto_size_mode=ColumnsAutoSizeMode.FIT_CONTENTS,  # Keeps column styling clean
+            update_on=['selectionChanged'],
             key=f"single_player_grid_{player_name}",  # Prevents cross-player state collisions
         )
     except AttributeError:
