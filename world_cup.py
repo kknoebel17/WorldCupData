@@ -201,7 +201,7 @@ if player_name and str(player_name).strip() != "":
 
         # 2. Summary Metrics (3 cols)
 
-        # Need to define first summary
+        # Need to define first and third summary
         # metric for field players vs. goalkeepers
         first_label = (
             'Clean Sheets' if stats.get('Position') == 'GK'
@@ -211,6 +211,10 @@ if player_name and str(player_name).strip() != "":
             stats.get('Clean Sheets') if stats.get('Position') == 'GK'
             else stats.get('Goals Scored')
         )
+        third_metric = (
+            stats.get('Goalkeeper Minutes Played') if stats.get('Position') == 'GK'
+            else stats.get('Total Minutes Played')
+        )
         metric_col1, metric_col2, metric_col3 = st.columns(3)
 
         with metric_col1:
@@ -218,7 +222,7 @@ if player_name and str(player_name).strip() != "":
         with metric_col2:
             st.metric(label="Plus / Minus", value=stats.get("Plus/Minus", "0"))
         with metric_col3:
-            st.metric(label="Total Minutes Played", value=stats.get("Total Minutes Played", "0"))
+            st.metric(label="Total Minutes Played", value=third_metric)
 
         st.divider()
 
