@@ -79,4 +79,5 @@ def test_get_player_by_name_accents(player_name):
         if col == 'Player Name':
             assert player_det.loc[col].values[0] == name_to_test
         else:
+            print(player_det.loc[col])
             assert player_det.loc[col].values[0] == to_test[col].values[0]

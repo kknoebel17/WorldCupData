@@ -39,7 +39,7 @@ class FieldPlayer(PlayerBase):
     goals_pens: int
     pens_made: int
     pens_att: int
-    points_per_game: int
+    points_per_game: float
     on_goals_for: int
     on_goals_against: int
     goals_per90: float

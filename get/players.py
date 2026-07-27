@@ -8,7 +8,7 @@ import pandas as pd
 import constants as const
 import get.helpers as helpers
 from access.relational import SQLAccess
-from models.players import FieldPlayer, GoalKeeper
+from models.players import PlayerBase, FieldPlayer, GoalKeeper
 
 # Globals
 GK_POS_CODE: str = 'GK'
@@ -61,11 +61,21 @@ class Players:
                 if (val in const.GOALKEEPER_COLS) or (val in const.BASE_COLS):
                     detail_map[val] = player_detail[val].values[0]
             player_detail = asdict(GoalKeeper(**detail_map))
+            # Grab correct data types from model
+            player_data_type = {
+                const.PLAYER_COLS[k]: v
+                for k, v in GoalKeeper.__annotations__.items()
+            }
         else:
             for val in player_detail.columns:
                 if (val in const.FIELD_PLAYER_COLS) or (val in const.BASE_COLS):
                     detail_map[val] = player_detail[val].values[0]
             player_detail = asdict(FieldPlayer(**detail_map))
+            # Grab correct data types from model
+            player_data_type = {
+                const.PLAYER_COLS[k]: v
+                for k, v in FieldPlayer.__annotations__.items()
+            }
 
         # Reset column names
         player_detail_corr = {
@@ -76,6 +86,16 @@ class Players:
             index=[0],
             data=player_detail_corr,
         )
+        # Merge player data types with base type
+        base_data_type = {
+            const.PLAYER_COLS[k]: v
+            for k, v in PlayerBase.__annotations__.items()
+        }
+        total_player_dtype = base_data_type | player_data_type
+        try:
+            df_det_corr = df_det_corr.astype(total_player_dtype, errors='ignore')
+        except TypeError:
+            print(f"Bad data types for {player_name}")
 
         return df_det_corr.T
 
