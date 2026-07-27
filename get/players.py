@@ -1,7 +1,7 @@
 """Single location for database interaction the Players class."""
-
+import dataclasses
 from dataclasses import asdict
-from typing import Dict, List, Union
+from typing import Any, Dict, Tuple, Union
 
 import pandas as pd
 
@@ -47,30 +47,20 @@ class Players:
         player_detail = player_detail.fillna('')
         if len(player_detail) == 0:
             return None
-        # Create player detail
-        detail_map: Dict[str, str] = {}
         # Inspect to find goalkeeper or field player
         is_gk: bool = player_detail['position'].values[0] == GK_POS_CODE
         if is_gk:  # Assign data to correct type
-            for val in player_detail.columns:
-                if (val in const.GOALKEEPER_COLS) or (val in const.BASE_COLS):
-                    detail_map[val] = player_detail[val].values[0]
-            player_detail = asdict(GoalKeeper(**detail_map))
-            # Grab correct data types from model
-            player_data_type = {
-                const.PLAYER_COLS[k]: v
-                for k, v in GoalKeeper.__annotations__.items()
-            }
-        else:
-            for val in player_detail.columns:
-                if (val in const.FIELD_PLAYER_COLS) or (val in const.BASE_COLS):
-                    detail_map[val] = player_detail[val].values[0]
-            player_detail = asdict(FieldPlayer(**detail_map))
-            # Grab correct data types from model
-            player_data_type = {
-                const.PLAYER_COLS[k]: v
-                for k, v in FieldPlayer.__annotations__.items()
-            }
+            player_detail, player_data_type = self._set_model_data(
+                player_detail=player_detail,
+                constant_dict=const.GOALKEEPER_COLS,
+                model=GoalKeeper
+            )
+        else:  # Field player
+            player_detail, player_data_type = self._set_model_data(
+                player_detail=player_detail,
+                constant_dict=const.FIELD_PLAYER_COLS,
+                model=FieldPlayer
+            )
 
         # Reset column names
         player_detail_corr = {
@@ -95,6 +85,28 @@ class Players:
         df_det_corr = df_det_corr.sort_index(axis='columns')
 
         return df_det_corr.T
+
+    def _set_model_data(
+            self,
+            player_detail: pd.DataFrame,
+            constant_dict: Dict[str, str],
+            model: dataclasses.dataclass
+    ) -> Tuple[Dict[str, Any], dataclasses.dataclass]:
+        # Create player detail
+        detail_map: Dict[str, str] = {}
+        for val in player_detail.columns:
+            if (val in constant_dict) or (val in const.BASE_COLS):
+                detail_map[val] = player_detail[val].values[0]
+
+        player_detail = asdict(model(**detail_map))
+        # Grab correct data types from model
+        player_data_type = {
+            const.PLAYER_COLS[k]: v
+            for k, v in model.__annotations__.items()
+        }
+
+        return (player_detail, player_data_type)
+
 
 
 
