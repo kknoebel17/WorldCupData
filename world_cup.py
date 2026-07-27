@@ -223,15 +223,23 @@ if player_name and str(player_name).strip() != "":
         st.divider()
 
         # 3. Remainder of metrics (2 cols)
-        # Exclude the keys we already displayed above
-        displayed_keys = [
-            "Goals Scored", "Plus/Minus", "Total Minutes Played",
-            "Team", "Position", "Player Name",
-        ]
-        remaining_metrics = {k: v for k, v in stats.items() if k not in displayed_keys}
 
         # Dynamically split the remaining items into two columns
         bottom_col1, bottom_col2 = st.columns(2)
+        # Display Age and Club first
+        age_metric = stats.get("Age", "0")
+        club_metric = stats.get("Club", "0")
+        with bottom_col1:
+            st.text(f"Age | {age_metric}")
+        with bottom_col2:
+            st.text(f"Club | {club_metric}")
+
+        # Exclude the keys we already displayed above
+        displayed_keys = [
+            "Goals Scored", "Plus/Minus", "Total Minutes Played",
+            "Team", "Position", "Player Name", "Age", "Club",
+        ]
+        remaining_metrics = {k: v for k, v in stats.items() if k not in displayed_keys}
 
         for index, (metric_name, value) in enumerate(remaining_metrics.items()):
             # Alternates items between column 1 and column 2

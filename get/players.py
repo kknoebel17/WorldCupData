@@ -96,6 +96,8 @@ class Players:
             df_det_corr = df_det_corr.astype(total_player_dtype, errors='ignore')
         except TypeError:
             print(f"Bad data types for {player_name}")
+        # Sort columns from A to Z
+        df_det_corr = df_det_corr.sort_index(axis='columns')
 
         return df_det_corr.T
 
