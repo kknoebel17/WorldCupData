@@ -15,7 +15,7 @@ class PlayerBase:
     minutes_pct: float
     minutes_per_start: float
     games_complete: int
-    games_subs: float
+    games_subs: int
     minutes_per_sub: float
     unused_subs: int
     plus_minus: float
