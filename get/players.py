@@ -49,7 +49,6 @@ class Players:
             return None
         # Create player detail
         detail_map: Dict[str, str] = {}
-        keys: List[str] = list(const.PLAYER_COLS.keys())
         # Inspect to find goalkeeper or field player
         is_gk: bool = player_detail['position'].values[0] == GK_POS_CODE
         if is_gk:  # Assign data to correct type
