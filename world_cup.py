@@ -251,5 +251,5 @@ if player_name and str(player_name).strip() != "":
                     st.text(f"{metric_name} | {value}")
 
     except Exception as e:
-        st.error(f"Error rendering layout: {e}")
+        st.error(f"Player {player_name} not found.")
 
