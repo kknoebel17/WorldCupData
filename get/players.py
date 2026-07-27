@@ -3,6 +3,7 @@ import dataclasses
 from dataclasses import asdict
 from typing import Any, Dict, Tuple, Union
 
+import numpy as np
 import pandas as pd
 
 import constants as const
@@ -12,6 +13,7 @@ from models.players import PlayerBase, FieldPlayer, GoalKeeper
 
 # Globals
 GK_POS_CODE: str = 'GK'
+NON_NUMERIC_COLS = ["Player Name", "Team", "Position","Age", "Club"]
 
 class Players:
     def __init__(self):
@@ -50,13 +52,13 @@ class Players:
         # Inspect to find goalkeeper or field player
         is_gk: bool = player_detail['position'].values[0] == GK_POS_CODE
         if is_gk:  # Assign data to correct type
-            player_detail, player_data_type = self._set_model_data(
+            player_detail, total_player_dtype = self._set_model_data(
                 player_detail=player_detail,
                 constant_dict=const.GOALKEEPER_COLS,
                 model=GoalKeeper
             )
         else:  # Field player
-            player_detail, player_data_type = self._set_model_data(
+            player_detail, total_player_dtype = self._set_model_data(
                 player_detail=player_detail,
                 constant_dict=const.FIELD_PLAYER_COLS,
                 model=FieldPlayer
@@ -71,14 +73,14 @@ class Players:
             index=[0],
             data=player_detail_corr,
         )
-        # Merge player data types with base type
-        base_data_type = {
-            const.PLAYER_COLS[k]: v
-            for k, v in PlayerBase.__annotations__.items()
-        }
-        total_player_dtype = base_data_type | player_data_type
         try:
-            df_det_corr = df_det_corr.astype(total_player_dtype, errors='ignore')
+            # Replace empty strings in numeric
+            for col in df_det_corr.columns:
+                if col in NON_NUMERIC_COLS:
+                    pass
+                else:
+                    df_det_corr[col] = df_det_corr[col].replace('', 0)
+            df_det_corr = df_det_corr.astype(total_player_dtype)
         except TypeError:
             print(f"Bad data types for {player_name}")
         # Sort columns alphabetically
@@ -104,8 +106,14 @@ class Players:
             const.PLAYER_COLS[k]: v
             for k, v in model.__annotations__.items()
         }
+        # Merge player data types with base type
+        base_data_type = {
+            const.PLAYER_COLS[k]: v
+            for k, v in PlayerBase.__annotations__.items()
+        }
+        total_player_dtype = base_data_type | player_data_type
 
-        return (player_detail, player_data_type)
+        return player_detail, total_player_dtype
 
 
 
