@@ -5,7 +5,6 @@ BASE_COLS = {
     'team': 'Team',
     'position': 'Position',
     'age': 'Age',
-    'birth_year': 'Birth Year',
     'club': 'Club',
     'cards_yellow': 'Yellow Cards',
     'cards_red': 'Red Cards',

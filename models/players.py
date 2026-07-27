@@ -8,7 +8,6 @@ class PlayerBase:
     team: str
     position: str
     age: int
-    birth_year: int
     club: str
     cards_yellow: float
     cards_red: float
