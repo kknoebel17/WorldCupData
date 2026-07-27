@@ -1,5 +1,15 @@
 """Single file used for constants."""
 
+# Drop Country column as it always matches Team column
+# Drop birth age because it is not needed
+# Pens conceded and won are null in dataset
+PLAYER_COLS_TO_DROP = [
+    'team_country',
+    'birth_year',
+    'pens_conceded',
+    'pens_won',
+]
+
 BASE_COLS = {
     'player': 'Player Name',
     'team': 'Team',
@@ -21,7 +31,6 @@ BASE_COLS = {
     'cards_yellow_red': 'Total Cards',
     'fouls': 'Number of Fouls',
     'fouled': 'Numer of Times Fouled',
-    'pens_conceded': 'Penalties Conceded',
     'own_goals': 'Own Goals',
 }
 
@@ -55,7 +64,6 @@ FIELD_PLAYER_COLS = {
     'crosses': 'Crosses',
     'interceptions': 'Interceptions',
     'tackles_won': 'Tackles Won',
-    'pens_won': 'Penalties Won',
 }
 
 GOALKEEPER_COLS =  {

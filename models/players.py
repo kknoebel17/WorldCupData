@@ -24,7 +24,6 @@ class PlayerBase:
     cards_yellow_red: int
     fouls: int
     fouled: int
-    pens_conceded: int
     own_goals: int
 
 @dataclass
@@ -58,7 +57,6 @@ class FieldPlayer(PlayerBase):
     crosses: int
     interceptions: int
     tackles_won: int
-    pens_won: int
 
 @dataclass
 class GoalKeeper(PlayerBase):

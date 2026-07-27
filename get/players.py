@@ -22,11 +22,7 @@ class Players:
         self.all_players = pd.DataFrame(cursor.fetchall(), columns=[desc[0] for desc in cursor.description])
         # Lower player names and remove accents
         self.all_players = helpers.clean_player_name(self.all_players)
-        # Drop Country column as it always matches Team column
-        # Drop birth age becasue it is not needed
-        self.all_players = self.all_players.drop(
-            columns=['team_country', 'birth_year']
-        )
+        self.all_players = self.all_players.drop(columns=const.PLAYER_COLS_TO_DROP)
         self.sa.close_connection(self.cursor)
 
     def get_player_summaries(self) -> pd.DataFrame:
