@@ -201,10 +201,21 @@ if player_name and str(player_name).strip() != "":
         st.divider()
 
         # 2. Summary Metrics (3 cols)
+
+        # Need to define first summary
+        # metric for field players vs. goalkeepers
+        first_label = (
+            'Clean Sheets' if stats.get('Position') == 'GK'
+            else 'Total Goals Scored'
+        )
+        first_metric = (
+            stats.get('Clean Sheets') if stats.get('Position') == 'GK'
+            else stats.get('Goals Scored')
+        )
         metric_col1, metric_col2, metric_col3 = st.columns(3)
 
         with metric_col1:
-            st.metric(label="Total Goals Scored", value=stats.get("Goals Scored", "0"))
+            st.metric(label=first_label, value=first_metric)
         with metric_col2:
             st.metric(label="Plus / Minus", value=stats.get("Plus/Minus", "0"))
         with metric_col3:
