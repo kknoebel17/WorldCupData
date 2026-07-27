@@ -8,16 +8,15 @@ class PlayerBase:
     team: str
     position: str
     age: int
-    birth_year: int
     club: str
-    cards_yellow: float
-    cards_red: float
+    cards_yellow: int
+    cards_red: int
     minutes_per_game: int
     minutes_pct: float
     minutes_per_start: float
     games_complete: int
-    games_subs: float
-    minutes_per_sub: float
+    games_subs: int
+    minutes_per_sub: int
     unused_subs: int
     plus_minus: float
     plus_minus_per90: float
@@ -25,7 +24,6 @@ class PlayerBase:
     cards_yellow_red: int
     fouls: int
     fouled: int
-    pens_conceded: int
     own_goals: int
 
 @dataclass
@@ -40,7 +38,7 @@ class FieldPlayer(PlayerBase):
     goals_pens: int
     pens_made: int
     pens_att: int
-    points_per_game: int
+    points_per_game: float
     on_goals_for: int
     on_goals_against: int
     goals_per90: float
@@ -59,7 +57,6 @@ class FieldPlayer(PlayerBase):
     crosses: int
     interceptions: int
     tackles_won: int
-    pens_won: int
 
 @dataclass
 class GoalKeeper(PlayerBase):

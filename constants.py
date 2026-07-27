@@ -1,11 +1,20 @@
 """Single file used for constants."""
 
+# Drop Country column as it always matches Team column
+# Drop birth age because it is not needed
+# Pens conceded and won are null in dataset
+PLAYER_COLS_TO_DROP = [
+    'team_country',
+    'birth_year',
+    'pens_conceded',
+    'pens_won',
+]
+
 BASE_COLS = {
     'player': 'Player Name',
     'team': 'Team',
     'position': 'Position',
     'age': 'Age',
-    'birth_year': 'Birth Year',
     'club': 'Club',
     'cards_yellow': 'Yellow Cards',
     'cards_red': 'Red Cards',
@@ -22,7 +31,6 @@ BASE_COLS = {
     'cards_yellow_red': 'Total Cards',
     'fouls': 'Number of Fouls',
     'fouled': 'Numer of Times Fouled',
-    'pens_conceded': 'Penalties Conceded',
     'own_goals': 'Own Goals',
 }
 
@@ -38,8 +46,8 @@ FIELD_PLAYER_COLS = {
     'pens_made': 'Penalties Made',
     'pens_att': 'Penalties Attempted',
     'points_per_game': 'Point per Game',
-    'on_goals_for': 'Own Goals For',
-    'on_goals_against': 'Own Goals Against',
+    'on_goals_for': 'On Field During Goals For',
+    'on_goals_against': 'On Field During Goals Against',
     'goals_per90': 'Goals per 90 Minutes',
     'assists_per90': 'Assists per 90 Minutes',
     'goals_assists_per90': 'Goals from Assists per 90 Minutes',
@@ -56,7 +64,6 @@ FIELD_PLAYER_COLS = {
     'crosses': 'Crosses',
     'interceptions': 'Interceptions',
     'tackles_won': 'Tackles Won',
-    'pens_won': 'Penalties Won',
 }
 
 GOALKEEPER_COLS =  {

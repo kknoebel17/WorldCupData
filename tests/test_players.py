@@ -5,6 +5,7 @@ import pytest
 from pathlib import Path
 
 import constants as const
+import models.players as mod
 from get.players import Players
 
 # Globals
@@ -17,7 +18,7 @@ def test_init():
 def test_get_player_summaries():
     pls = Players()
     all_pls = pls.get_player_summaries()
-    assert all_pls.columns.tolist() == list(const.PLAYER_COLS.values())[:6]
+    assert all_pls.columns.tolist() == list(const.PLAYER_COLS.values())[:5]
     assert len(all_pls) == UNIQUE_PLAYERS
 
 @pytest.mark.parametrize(
@@ -40,21 +41,28 @@ def test_get_player_by_name(player_name, position):
     # Reset column names to match output of get_player_by_name()
     rename_dict = const.PLAYER_COLS
     test_row = test_row.rename(columns=rename_dict)
+    test_row = test_row.replace('', 0)
     if position == 'FW':
-        target_cols = list(const.BASE_COLS.values()) + list(const.FIELD_PLAYER_COLS.values())
-        to_test = test_row[target_cols]
+        target_dict = const.BASE_COLS | const.FIELD_PLAYER_COLS
+        model_types = mod.PlayerBase.__annotations__ | mod.FieldPlayer.__annotations__
+        to_test = test_row[list(target_dict.values())]
     elif position == 'GK':
-        target_cols = list(const.BASE_COLS.values()) + list(const.GOALKEEPER_COLS.values())
-        to_test = test_row[target_cols]
-    else:
+        target_dict = const.BASE_COLS | const.GOALKEEPER_COLS
+        to_test = test_row[list(target_dict.values())]
+        model_types = mod.PlayerBase.__annotations__ | mod.GoalKeeper.__annotations__
+    else:  # Name not found
         to_test = None
+        model_types = None
+        target_dict = None
     pls = Players()
     player_det = pls.get_player_by_name(player_name)
     if player_det is None:  # Test null return
         assert player_det == to_test
     else:
-        for col in to_test.columns:
-            assert player_det.loc[col].values[0] == to_test[col].values[0]
+        for k, v  in target_dict.items():
+            print(k, v)
+            assert player_det.loc[v].values[0] == to_test[v].values[0]
+            assert type(player_det.loc[v].values[0]) == model_types[k]
 
 @pytest.mark.parametrize(
     'player_name', [
@@ -67,6 +75,7 @@ def test_get_player_by_name_accents(player_name):
     test_data_path = Path('tests/resources/sample_player_data.csv')
     test_data = pd.read_csv(test_data_path)
     test_row = test_data[test_data['player'] == name_in_test_file].fillna('')
+    test_row = test_row.replace('', 0)
     # Reset column names to match output of get_player_by_name()
     rename_dict = const.PLAYER_COLS
     test_row = test_row.rename(columns=rename_dict)
@@ -79,4 +88,5 @@ def test_get_player_by_name_accents(player_name):
         if col == 'Player Name':
             assert player_det.loc[col].values[0] == name_to_test
         else:
+            print(player_det.loc[col])
             assert player_det.loc[col].values[0] == to_test[col].values[0]

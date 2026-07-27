@@ -1,17 +1,19 @@
 """Single location for database interaction the Players class."""
-
+import dataclasses
 from dataclasses import asdict
-from typing import Dict, List, Union
+from typing import Any, Dict, Tuple, Union
 
+import numpy as np
 import pandas as pd
 
 import constants as const
 import get.helpers as helpers
 from access.relational import SQLAccess
-from models.players import FieldPlayer, GoalKeeper
+from models.players import PlayerBase, FieldPlayer, GoalKeeper
 
 # Globals
 GK_POS_CODE: str = 'GK'
+NON_NUMERIC_COLS = ["Player Name", "Team", "Position","Age", "Club"]
 
 class Players:
     def __init__(self):
@@ -22,15 +24,14 @@ class Players:
         self.all_players = pd.DataFrame(cursor.fetchall(), columns=[desc[0] for desc in cursor.description])
         # Lower player names and remove accents
         self.all_players = helpers.clean_player_name(self.all_players)
-        # Drop Country column as it always matches Team column
-        self.all_players = self.all_players.drop(columns=['team_country'])
+        self.all_players = self.all_players.drop(columns=const.PLAYER_COLS_TO_DROP)
         self.sa.close_connection(self.cursor)
 
     def get_player_summaries(self) -> pd.DataFrame:
         """Get summary information for all players in the database."""
         df_players_summary = self.all_players
         rename_dict = const.PLAYER_COLS
-        cols_to_use = list(const.PLAYER_COLS.values())[:6]
+        cols_to_use = list(const.PLAYER_COLS.values())[:5]
         df_players_summary = df_players_summary.rename(columns=rename_dict)
         df_players_summary = df_players_summary[cols_to_use]
 
@@ -48,21 +49,20 @@ class Players:
         player_detail = player_detail.fillna('')
         if len(player_detail) == 0:
             return None
-        # Create player detail
-        detail_map: Dict[str, str] = {}
-        keys: List[str] = list(const.PLAYER_COLS.keys())
         # Inspect to find goalkeeper or field player
         is_gk: bool = player_detail['position'].values[0] == GK_POS_CODE
         if is_gk:  # Assign data to correct type
-            for val in player_detail.columns:
-                if (val in const.GOALKEEPER_COLS) or (val in const.BASE_COLS):
-                    detail_map[val] = player_detail[val].values[0]
-            player_detail = asdict(GoalKeeper(**detail_map))
-        else:
-            for val in player_detail.columns:
-                if (val in const.FIELD_PLAYER_COLS) or (val in const.BASE_COLS):
-                    detail_map[val] = player_detail[val].values[0]
-            player_detail = asdict(FieldPlayer(**detail_map))
+            player_detail, total_player_dtype = self._set_model_data(
+                player_detail=player_detail,
+                constant_dict=const.GOALKEEPER_COLS,
+                model=GoalKeeper
+            )
+        else:  # Field player
+            player_detail, total_player_dtype = self._set_model_data(
+                player_detail=player_detail,
+                constant_dict=const.FIELD_PLAYER_COLS,
+                model=FieldPlayer
+            )
 
         # Reset column names
         player_detail_corr = {
@@ -73,8 +73,48 @@ class Players:
             index=[0],
             data=player_detail_corr,
         )
+        try:
+            # Replace empty strings in numeric
+            for col in df_det_corr.columns:
+                if col in NON_NUMERIC_COLS:
+                    pass
+                else:
+                    df_det_corr[col] = df_det_corr[col].replace('', 0)
+            df_det_corr = df_det_corr.astype(total_player_dtype)
+        except TypeError:
+            print(f"Bad data types for {player_name}")
+        # Sort columns alphabetically
+        df_det_corr = df_det_corr.sort_index(axis='columns')
 
         return df_det_corr.T
+
+    def _set_model_data(
+            self,
+            player_detail: pd.DataFrame,
+            constant_dict: Dict[str, str],
+            model: dataclasses.dataclass
+    ) -> Tuple[Dict[str, Any], dataclasses.dataclass]:
+        # Create player detail
+        detail_map: Dict[str, str] = {}
+        for val in player_detail.columns:
+            if (val in constant_dict) or (val in const.BASE_COLS):
+                detail_map[val] = player_detail[val].values[0]
+
+        player_detail = asdict(model(**detail_map))
+        # Grab correct data types from model
+        player_data_type = {
+            const.PLAYER_COLS[k]: v
+            for k, v in model.__annotations__.items()
+        }
+        # Merge player data types with base type
+        base_data_type = {
+            const.PLAYER_COLS[k]: v
+            for k, v in PlayerBase.__annotations__.items()
+        }
+        total_player_dtype = base_data_type | player_data_type
+
+        return player_detail, total_player_dtype
+
 
 
 
