@@ -9,8 +9,8 @@ class PlayerBase:
     position: str
     age: int
     club: str
-    cards_yellow: float
-    cards_red: float
+    cards_yellow: int
+    cards_red: int
     minutes_per_game: int
     minutes_pct: float
     minutes_per_start: float
