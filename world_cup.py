@@ -179,7 +179,6 @@ if player_name and str(player_name).strip() != "":
         # but for clean dictionary lookups, we convert it to a Series/Dict:
         # Assumes player_det has 'Metric' as index and values in the first column
         stats = player_det.iloc[:, 0].to_dict()
-        print(stats)
 
         # 1. HEADER (Name + Picture Side-by-Side)
         # Adjust widths (e.g., 3 parts name, 1 part image)
