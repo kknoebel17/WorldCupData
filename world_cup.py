@@ -239,11 +239,13 @@ if player_name and str(player_name).strip() != "":
         rc_metric = stats.get("Red Cards", "0")
         with bottom_col1:
             st.text(f"Age | {age_metric}")
-            st.text(f"Wins | {wins_metric}")
+            if position == 'GK':
+                st.text(f"Wins | {wins_metric}")
             st.text(f"Yellow Cards | {yc_metric}")
         with bottom_col2:
             st.text(f"Club | {club_metric}")
-            st.text(f"Losses | {losses_metric}")
+            if position == 'GK':
+                st.text(f"Losses | {losses_metric}")
             st.text(f"Red Cards | {rc_metric}")
 
         # Exclude the keys we already displayed above
@@ -251,6 +253,7 @@ if player_name and str(player_name).strip() != "":
             "Goals Scored", "Plus/Minus", "Total Minutes Played",
             "Team", "Position", "Player Name", "Age", "Club",
             "Yellow Cards", "Red Cards", "Wins", "Losses",
+            "Clean Sheets", "Goalkeeper Minutes Played"
         ]
         remaining_metrics = {k: v for k, v in stats.items() if k not in displayed_keys}
 
