@@ -229,15 +229,24 @@ if player_name and str(player_name).strip() != "":
         # Display Age and Club first
         age_metric = stats.get("Age", "0")
         club_metric = stats.get("Club", "0")
+        wins_metric = stats.get("Wins", "0")
+        losses_metric = stats.get("Losses", "0")
+        yc_metric = stats.get("Yellow Cards", "0")
+        rc_metric = stats.get("Red Cards", "0")
         with bottom_col1:
             st.text(f"Age | {age_metric}")
+            st.text(f"Wins | {wins_metric}")
+            st.text(f"Yellow Cards | {yc_metric}")
         with bottom_col2:
             st.text(f"Club | {club_metric}")
+            st.text(f"Losses | {losses_metric}")
+            st.text(f"Red Cards | {rc_metric}")
 
         # Exclude the keys we already displayed above
         displayed_keys = [
             "Goals Scored", "Plus/Minus", "Total Minutes Played",
             "Team", "Position", "Player Name", "Age", "Club",
+            "Yellow Cards", "Red Cards", "Wins", "Losses",
         ]
         remaining_metrics = {k: v for k, v in stats.items() if k not in displayed_keys}
 
