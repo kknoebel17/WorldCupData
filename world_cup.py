@@ -1,13 +1,22 @@
 """Webpage for FIFA World Cup 2026 data using streamlit."""
-
+import time
 from pathlib import Path
+
 import streamlit as st
+from streamlit_elements import (
+    dashboard,
+    elements,
+    html,
+    mui,
+    nivo,
+)
 from st_aggrid import (
     AgGrid,
     ColumnsAutoSizeMode,
     GridOptionsBuilder,
 )
 
+from constants import NON_NUMERIC_COLS
 from get.players import Players
 
 # Globals
@@ -50,121 +59,178 @@ if "my_data" not in st.session_state:
     st.session_state.my_data = all_players.reset_index(drop=True)
 
 # Functions
-def render_player_card(target_player_name, container_index):
+def render_player_subgrid(target_player_name, container_index):
     """
-    Renders a single player card container.
+    Renders the internal content of a player statistics card using native
+    Streamlit layout elements, and prints out working Nivo visual data charts.
     """
-    with st.container(
-            border=True,
-            key=f"single_player_conts_{container_index}",
-            width='content',
-            horizontal_alignment='distribute',
-    ):
-        if target_player_name and str(target_player_name).strip() != "":
-            st.divider()
-            players_api = Players()
-            player_det = players_api.get_player_by_name(target_player_name)
+    if not target_player_name or str(target_player_name).strip() == "":
+        return
 
-            try:
-                # For clean dictionary lookups, we convert it to a Series/Dict:
-                # Assumes player_det has 'Metric' as index and values in the first column
-                stats = player_det.iloc[:, 0].to_dict()
+    st.divider()
+    players_api = Players()
+    player_det = players_api.get_player_by_name(target_player_name)
 
-                # 1. Header (Name + Picture Side-by-Side + Close Button)
-                top_col1, top_col2 = st.columns([3, 1])
+    try:
+        # For clean dictionary lookups, we convert it to a Series/Dict:
+        # Assumes player_det has 'Metric' as index and values in the first column
+        stats = player_det.iloc[:, 0].to_dict()
+        # 1. Header (Name + Picture Side-by-Side + Close Button)
+        top_col1, top_col2 = st.columns([3, 1])
 
-                with top_col1:
-                    st.markdown(f"## {target_player_name}")
-                    player_team = stats.get("Team")
-                    position = stats.get("Position")
-                    st.markdown(f"### {player_team}")
-                    st.markdown(f"### {position}")
-
-                    # Close trigger action
-                    if st.button("Close Profile", key=f"clear_slot_{container_index}"):
-                        if container_index == 0:
-                            # Primary card close: shift comp card up if it exists
-                            if st.session_state.compare_player_name:
-                                st.session_state.active_player_name = st.session_state.compare_player_name
-                                st.session_state.compare_player_name = ""
-                            else:
-                                st.session_state.active_player_name = ""
-                        else:
-                            # Secondary comparison card close
-                            st.session_state.compare_player_name = ""
-
-                        st.session_state.grid_version += 1
-                        st.rerun()
-
-                with top_col2:
-                    image_path = Path('images.png')
-                    st.image(image_path, width=100)
-
-                st.divider()
-
-                # 2. Summary Metrics (3 cols)
-                first_label = (
-                    'Clean Sheets' if stats.get('Position') == 'GK'
-                    else 'Total Goals Scored'
-                )
-                first_metric = (
-                    stats.get('Clean Sheets') if stats.get('Position') == 'GK'
-                    else stats.get('Goals Scored')
-                )
-                third_metric = (
-                    stats.get('Goalkeeper Minutes Played') if stats.get('Position') == 'GK'
-                    else stats.get('Total Minutes Played')
-                )
-                metric_col1, metric_col2, metric_col3 = st.columns(3)
-
-                with metric_col1:
-                    st.metric(label=first_label, value=first_metric)
-                with metric_col2:
-                    st.metric(label="Plus / Minus", value=stats.get("Plus/Minus", "0"))
-                with metric_col3:
-                    st.metric(label="Total Minutes Played", value=third_metric)
-
-                st.divider()
-
-                # 3. Remainder of metrics (2 cols)
-                bottom_col1, bottom_col2 = st.columns(2)
-                age_metric = stats.get("Age", "0")
-                club_metric = stats.get("Club", "0")
-                wins_metric = stats.get("Wins", "0")
-                losses_metric = stats.get("Losses", "0")
-                yc_metric = stats.get("Yellow Cards", "0")
-                rc_metric = stats.get("Red Cards", "0")
-
-                with bottom_col1:
-                    st.text(f"Age | {age_metric}")
-                    if position == 'GK':
-                        st.text(f"Wins | {wins_metric}")
-                    st.text(f"Yellow Cards | {yc_metric}")
-                with bottom_col2:
-                    st.text(f"Club | {club_metric}")
-                    if position == 'GK':
-                        st.text(f"Losses | {losses_metric}")
-                    st.text(f"Red Cards | {rc_metric}")
-
-                # Exclude the keys we already displayed above
-                displayed_keys = [
-                    "Goals Scored", "Plus/Minus", "Total Minutes Played",
-                    "Team", "Position", "Player Name", "Age", "Club",
-                    "Yellow Cards", "Red Cards", "Wins", "Losses",
-                    "Clean Sheets", "Goalkeeper Minutes Played"
-                ]
-                remaining_metrics = {k: v for k, v in stats.items() if k not in displayed_keys}
-
-                for index, (metric_name, value) in enumerate(remaining_metrics.items()):
-                    if index % 2 == 0:
-                        with bottom_col1:
-                            st.text(f"{metric_name} | {value}")
+        with top_col1:
+            st.markdown(f"## {target_player_name}")
+            player_team = stats.get("Team")
+            position = stats.get("Position")
+            st.markdown(f"### {player_team}")
+            st.markdown(f"### {position}")
+            # Close trigger action
+            if st.button("Close Profile", key=f"clear_slot_{container_index}"):
+                if container_index == 0:
+                    # Primary card close: shift comp card up if it exists
+                    if st.session_state.compare_player_name:
+                        st.session_state.active_player_name = st.session_state.compare_player_name
+                        st.session_state.compare_player_name = ""
                     else:
-                        with bottom_col2:
-                            st.text(f"{metric_name} | {value}")
+                        st.session_state.active_player_name = ""
+                else:
+                    # Secondary comparison card close
+                    st.session_state.compare_player_name = ""
+                st.session_state.grid_version += 1
+                st.rerun()
 
-            except Exception as e:
-                st.error(f"Player {target_player_name} not found: {e}.")
+        with top_col2:
+            image_path = Path('images.png')
+            st.image(image_path, width=100)
+
+        st.divider()
+
+        # 2. Summary Metrics (3 cols)
+        first_label = (
+            'Clean Sheets' if stats.get('Position') == 'GK'
+            else 'Total Goals Scored'
+        )
+        first_metric = (
+            stats.get('Clean Sheets') if stats.get('Position') == 'GK'
+            else stats.get('Goals Scored')
+        )
+        third_metric = (
+            stats.get('Goalkeeper Minutes Played') if stats.get('Position') == 'GK'
+            else stats.get('Total Minutes Played')
+        )
+        metric_col1, metric_col2, metric_col3 = st.columns(3)
+        with metric_col1:
+            st.metric(label=first_label, value=first_metric)
+        with metric_col2:
+            st.metric(label="Plus / Minus", value=stats.get("Plus/Minus", "0"))
+        with metric_col3:
+            st.metric(label="Total Minutes Played", value=third_metric)
+
+        st.divider()
+
+        # Gather available numerical/chartable
+        # metrics from the dictionary safely
+        numerical_metrics = {}
+        for k, v in stats.items():
+            try:
+                # Exclude non-numeric descriptive strings (like Team, Position, Club)
+                if k not in NON_NUMERIC_COLS:
+                    numerical_metrics[k] = int(float(str(v)))
+            except (ValueError, TypeError):
+                continue
+
+        # Set palettes for each card
+        chart_palette = "greens" if container_index == 0 else "gold"
+
+        # Multi-select widget to pick which statistics to map
+        chosen_metrics = st.multiselect(
+            "Select metrics to chart",
+            options=list(numerical_metrics.keys()),
+            default=None,
+            key=f"chart_metrics_select_{container_index}"
+        )
+
+        if chosen_metrics:
+            # Construct the structural dataset for Nivo Bar consumption based on choices
+            chart_data = [
+                {"metric": m, "value": numerical_metrics[m]}
+                for m in chosen_metrics
+            ]
+            # Inject the target player name to ensure a globally unique layout key wrapper
+            safe_player_key = "".join(c for c in target_player_name if c.isalnum())
+
+            # Open an independent elements canvas for the chart frame
+            with elements(f"player_chart_canvas_{container_index}_{safe_player_key}"):
+                with html.div(
+                        key=f"chart_wrap_{container_index}_{safe_player_key}",
+                        style={"height": 220, "width": "100%"}
+                ):
+                    nivo.Bar(
+                        data=chart_data,
+                        keys=["value"],
+                        indexBy="metric",
+                        margin={
+                            "top": 20,
+                            "right": 20,
+                            "bottom": 50,
+                            "left": 50
+                        },
+                        padding=0.3,
+                        colors={"scheme": chart_palette},
+                        axisBottom={
+                            "tickSize": 5,
+                            "tickPadding": 5,
+                            "tickRotation": -15,
+                        },
+                        labelTextColor={
+                            "from": "theme",
+                            "modifiers": [["darker", 1.6]]
+                        },
+                        animate=True,
+                        motionConfig="gentle"
+                    )
+        # 3. Remainder of metrics (2 cols)
+        bottom_col1, bottom_col2 = st.columns(2)
+        age_metric = stats.get("Age", "0")
+        club_metric = stats.get("Club", "0")
+        wins_metric = stats.get("Wins", "0")
+        losses_metric = stats.get("Losses", "0")
+        yc_metric = stats.get("Yellow Cards", "0")
+        rc_metric = stats.get("Red Cards", "0")
+
+        with bottom_col1:
+            st.text(f"Age | {age_metric}")
+            if position == 'GK':
+                st.text(f"Wins | {wins_metric}")
+            st.text(f"Yellow Cards | {yc_metric}")
+        with bottom_col2:
+            st.text(f"Club | {club_metric}")
+            if position == 'GK':
+                st.text(f"Losses | {losses_metric}")
+            st.text(f"Red Cards | {rc_metric}")
+
+        # Exclude the keys we already displayed above
+        displayed_keys = [
+            "Goals Scored", "Plus/Minus", "Total Minutes Played",
+            "Team", "Position", "Player Name", "Age", "Club",
+            "Yellow Cards", "Red Cards", "Wins", "Losses",
+            "Clean Sheets", "Goalkeeper Minutes Played"
+        ]
+        remaining_metrics = {
+            k: v for k, v in stats.items()
+            if k not in displayed_keys
+        }
+
+        for index, (metric_name, value) in enumerate(remaining_metrics.items()):
+            if index % 2 == 0:
+                with bottom_col1:
+                    st.text(f"{metric_name} | {value}")
+            else:
+                with bottom_col2:
+                    st.text(f"{metric_name} | {value}")
+
+    except Exception as e:
+        st.error(f"Player {target_player_name} not found: {e}.")
 
 # Widgets
 with st.sidebar:
@@ -190,6 +256,13 @@ with st.sidebar:
             st.session_state.grid_version += 1
             st.rerun()
 
+    # Player rest button
+    if st.button("Reset Comparison Views"):
+        st.session_state.active_player_name = ""
+        st.session_state.compare_player_name = ""
+        st.session_state.grid_version += 1
+        st.rerun()
+
 # Tables
 st.title('Players of the 2026 FIFA World Cup')
 st.subheader('Player summaries')
@@ -198,17 +271,26 @@ st.subheader('Player summaries')
 st.caption(PLAYER_SUMM_TEXT)
 
 # Categorical drop-down filters
-col1, col2, col3 = st.columns(3)
-with col1:
+col_f1, col_f2, col_f3 = st.columns(3)
+with col_f1:
     unique_teams = sorted(st.session_state.my_data["Team"].dropna().unique())
     selected_teams = st.multiselect("Filter by Team", options=unique_teams, default=[])
-with col2:
+with col_f2:
     unique_positions = sorted(st.session_state.my_data["Position"].dropna().unique())
-    selected_positions = st.multiselect("Filter by Position", options=unique_positions, default=[])
-with col3:
-    unique_clubs = sorted(st.session_state.my_data["Club"].dropna().unique())
-    selected_clubs = st.multiselect("Filter by Club", options=unique_clubs, default=[])
+    selected_positions = st.multiselect(
+        "Filter by Position",
+        options=unique_positions,
+        default=[]
+    )
+with col_f3:
+    unique_clubs = sorted(
+        st.session_state.my_data["Club"].dropna().unique()
+    )
+    selected_clubs = st.multiselect(
+        "Filter by Club", options=unique_clubs, default=[]
+    )
 
+# Apply row filtration matching layout state
 filtered_df = st.session_state.my_data.copy()
 if selected_teams:
     filtered_df = filtered_df[filtered_df["Team"].isin(selected_teams)]
@@ -219,75 +301,89 @@ if selected_clubs:
 
 st.divider()
 
-# Build aggrid table
-grid_builder = GridOptionsBuilder.from_dataframe(filtered_df)
-grid_builder.configure_default_column(filterable=True, sortable=True)
-grid_builder.configure_selection(selection_mode="single", use_checkbox=False)
-gridOptions = grid_builder.build()
+# Dashboard
+with st.container(border=True):
 
-event = AgGrid(
-    filtered_df,
-    gridOptions=gridOptions,
-    columns_auto_size_mode=ColumnsAutoSizeMode.FIT_CONTENTS,
-    update_on=['selectionChanged'],
-    key=f"main_player_grid_v{st.session_state.grid_version}",
-    theme=AGGRID_THEME,
-)
+    # Build aggrid table
+    grid_builder = GridOptionsBuilder.from_dataframe(filtered_df)
+    grid_builder.configure_default_column(
+        filterable=True,
+        sortable=True,
+    )
+    grid_builder.configure_selection(
+        selection_mode="single",
+        use_checkbox=False,
+    )
+    gridOptions = grid_builder.build()
 
-# Intercept selections cleanly
+    # Fallback initializer for our dynamic cache buster key
+    if "grid_version" not in st.session_state:
+        st.session_state.grid_version = 1
+
+    event = AgGrid(
+        filtered_df,
+        gridOptions=gridOptions,
+        columns_auto_size_mode=ColumnsAutoSizeMode.FIT_CONTENTS,
+        update_on=['selectionChanged'],
+        key=f"main_player_grid_v{st.session_state.grid_version}",
+        theme=AGGRID_THEME,
+    )
+
+# Parse selected row safely using ag-grid standard format
 selected_rows = event.get("selected_rows", [])
+selected_player = None
 
+# Handle varying AgGrid structure variants across library versions
 if selected_rows is not None and len(selected_rows) > 0:
+    # If the version returns a dataframe context structure
     if hasattr(selected_rows, "to_dict"):
-        selected_player = selected_rows.iloc[0]["Player Name"]
+        selected_player = selected_rows["Player Name"].iloc[0]
+    # If the version returns a list of dictionaries format
     elif isinstance(selected_rows, list):
-        selected_player = selected_rows[0]["Player Name"]
+        first_row = selected_rows[0]
+        if isinstance(first_row, dict):
+            selected_player = first_row.get("Player Name", "")
+        else:
+            selected_player = str(first_row)
     else:
         selected_player = selected_rows["Player Name"]
 
-    if selected_player != st.session_state.active_player_name:
-        if st.session_state.active_player_name:
-            st.session_state.compare_player_name = st.session_state.active_player_name
-        st.session_state.active_player_name = selected_player
-        st.session_state.grid_version += 1
-        st.rerun()
+# Trigger an immediate visual refresh if a new candidate is targeted
+if selected_player and str(
+        selected_player).strip() != "" and selected_player != st.session_state.active_player_name:
+    if st.session_state.active_player_name and st.session_state.active_player_name.strip() != "":
+        st.session_state.compare_player_name = st.session_state.active_player_name
 
-
-# Player rest button
-if st.button("Reset Comparison Views"):
-    st.session_state.active_player_name = ""
-    st.session_state.compare_player_name = ""
+    st.session_state.active_player_name = selected_player
     st.session_state.grid_version += 1
     st.rerun()
 
-# Setup row layout allocation dynamically based on the dual layout state
-if st.session_state.active_player_name and st.session_state.compare_player_name:
-    row_layout_cols = st.columns(2)
-else:
-    row_layout_cols = st.columns(1)
-
-# -------------------------------------------------------------
-# 2. RUNTIME CONDITIONAL COMPARISON GRID EXECUTION
-# -------------------------------------------------------------
+# Grid for player cards
 if st.session_state.active_player_name:
 
-    # Fork screen space depending on comparison slot status
+    # Fork screen space depending on
+    # comparison slot status using native columns
     if st.session_state.compare_player_name:
-        row_layout_cols = st.columns(2)
+        row_layout_cols = st.columns(2)  # This returns a list of two column objects
 
-        # Explicitly isolate card 1 to column index 0
-        with row_layout_cols[0]:
-            render_player_card(st.session_state.active_player_name, container_index=0)
+        # Col 1: Primary active selection slot (Card A)
+        with row_layout_cols[0]:  # Added explicit list index indicator
+            render_player_subgrid(
+                st.session_state.active_player_name,
+                container_index=0
+            )
 
-        # Explicitly isolate card 2 to column index 1
-        with row_layout_cols[1]:
-            render_player_card(st.session_state.compare_player_name, container_index=1)
+        # Col 2: Secondary comparative selection slot (Card B)
+        with row_layout_cols[1]:  # Added explicit list index indicator
+            render_player_subgrid(
+                st.session_state.compare_player_name,
+                container_index=1
+            )
 
     else:
-        row_layout_cols = st.columns(1)
-        # Full width fallback single column layout
-        with row_layout_cols[0]:
-            render_player_card(st.session_state.active_player_name, container_index=0)
-
-
-
+        row_layout_cols = st.columns(1)  # Fallback to full width if only one player is active
+        with row_layout_cols[0]:  # Added explicit list index indicator
+            render_player_subgrid(
+                st.session_state.active_player_name,
+                container_index=0
+            )
