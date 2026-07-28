@@ -10,6 +10,15 @@ PLAYER_COLS_TO_DROP = [
     'pens_won',
 ]
 
+NON_NUMERIC_COLS = [
+    "Player Name",
+    "Team",
+    "Position",
+    "Age",
+    "Club",
+]
+
+
 BASE_COLS = {
     'player': 'Player Name',
     'team': 'Team',

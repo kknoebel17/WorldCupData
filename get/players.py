@@ -13,7 +13,6 @@ from models.players import PlayerBase, FieldPlayer, GoalKeeper
 
 # Globals
 GK_POS_CODE: str = 'GK'
-NON_NUMERIC_COLS = ["Player Name", "Team", "Position","Age", "Club"]
 
 class Players:
     def __init__(self):
@@ -76,7 +75,7 @@ class Players:
         try:
             # Replace empty strings in numeric
             for col in df_det_corr.columns:
-                if col in NON_NUMERIC_COLS:
+                if col in const.NON_NUMERIC_COLS:
                     pass
                 else:
                     df_det_corr[col] = df_det_corr[col].replace('', 0)
