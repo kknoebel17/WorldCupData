@@ -164,108 +164,117 @@ if selected_rows is not None and len(selected_rows) > 0:
         st.session_state.active_player_name = selected_player
         st.rerun()
 
-# Single player table
-player_name = st.session_state.active_player_name
+# Single player container
+num_player_conts = 0
+with st.container(
+        border=True,
+        key=f"single_player_conts_{num_player_conts}",
+        width='content',
+        horizontal_alignment='distribute',
+):
+    player_name = st.session_state.active_player_name
 
-if player_name and str(player_name).strip() != "":
-    st.divider()
-    st.subheader('Single player statistics')
-    header = f"World Cup 2026 statistics for {player_name}"
-    players = Players()
-    player_det = players.get_player_by_name(player_name)
-
-    try:
-        # Transpose or pivot your data if it's stored vertically,
-        # but for clean dictionary lookups, we convert it to a Series/Dict:
-        # Assumes player_det has 'Metric' as index and values in the first column
-        stats = player_det.iloc[:, 0].to_dict()
-
-        # 1. HEADER (Name + Picture Side-by-Side)
-        # Adjust widths (e.g., 3 parts name, 1 part image)
-        top_col1, top_col2 = st.columns([3, 1])
-
-        with top_col1:
-            st.markdown(f"## {player_name}")
-            player_team = stats.get("Team")
-            position = stats.get("Position")
-            st.markdown(f"### {player_team}")
-            st.markdown(f"### {position}")
-
-
-        with top_col2:
-            # Replace with your actual image logic (URL column, file path, or default fallback)
-            image_path = Path('images.png')
-            st.image(image_path, width=100)
-
+    if player_name and str(player_name).strip() != "":
         st.divider()
+        st.subheader('Single player statistics')
+        header = f"World Cup 2026 statistics for {player_name}"
+        players = Players()
+        player_det = players.get_player_by_name(player_name)
 
-        # 2. Summary Metrics (3 cols)
+        try:
+            # Transpose or pivot your data if it's stored vertically,
+            # but for clean dictionary lookups, we convert it to a Series/Dict:
+            # Assumes player_det has 'Metric' as index and values in the first column
+            stats = player_det.iloc[:, 0].to_dict()
 
-        # Need to define first and third summary
-        # metric for field players vs. goalkeepers
-        first_label = (
-            'Clean Sheets' if stats.get('Position') == 'GK'
-            else 'Total Goals Scored'
-        )
-        first_metric = (
-            stats.get('Clean Sheets') if stats.get('Position') == 'GK'
-            else stats.get('Goals Scored')
-        )
-        third_metric = (
-            stats.get('Goalkeeper Minutes Played') if stats.get('Position') == 'GK'
-            else stats.get('Total Minutes Played')
-        )
-        metric_col1, metric_col2, metric_col3 = st.columns(3)
+            # 1. HEADER (Name + Picture Side-by-Side)
+            # Adjust widths (e.g., 3 parts name, 1 part image)
+            top_col1, top_col2 = st.columns([3, 1])
 
-        with metric_col1:
-            st.metric(label=first_label, value=first_metric)
-        with metric_col2:
-            st.metric(label="Plus / Minus", value=stats.get("Plus/Minus", "0"))
-        with metric_col3:
-            st.metric(label="Total Minutes Played", value=third_metric)
+            with top_col1:
+                st.markdown(f"## {player_name}")
+                player_team = stats.get("Team")
+                position = stats.get("Position")
+                st.markdown(f"### {player_team}")
+                st.markdown(f"### {position}")
 
-        st.divider()
 
-        # 3. Remainder of metrics (2 cols)
+            with top_col2:
+                # Replace with your actual image logic (URL column, file path, or default fallback)
+                image_path = Path('images.png')
+                st.image(image_path, width=100)
 
-        # Dynamically split the remaining items into two columns
-        bottom_col1, bottom_col2 = st.columns(2)
-        # Display Age and Club first
-        age_metric = stats.get("Age", "0")
-        club_metric = stats.get("Club", "0")
-        wins_metric = stats.get("Wins", "0")
-        losses_metric = stats.get("Losses", "0")
-        yc_metric = stats.get("Yellow Cards", "0")
-        rc_metric = stats.get("Red Cards", "0")
-        with bottom_col1:
-            st.text(f"Age | {age_metric}")
-            if position == 'GK':
-                st.text(f"Wins | {wins_metric}")
-            st.text(f"Yellow Cards | {yc_metric}")
-        with bottom_col2:
-            st.text(f"Club | {club_metric}")
-            if position == 'GK':
-                st.text(f"Losses | {losses_metric}")
-            st.text(f"Red Cards | {rc_metric}")
+            st.divider()
 
-        # Exclude the keys we already displayed above
-        displayed_keys = [
-            "Goals Scored", "Plus/Minus", "Total Minutes Played",
-            "Team", "Position", "Player Name", "Age", "Club",
-            "Yellow Cards", "Red Cards", "Wins", "Losses",
-            "Clean Sheets", "Goalkeeper Minutes Played"
-        ]
-        remaining_metrics = {k: v for k, v in stats.items() if k not in displayed_keys}
+            # 2. Summary Metrics (3 cols)
 
-        for index, (metric_name, value) in enumerate(remaining_metrics.items()):
-            # Alternates items between column 1 and column 2
-            if index % 2 == 0:
-                with bottom_col1:
-                    st.text(f"{metric_name} | {value}")
-            else:
-                with bottom_col2:
-                    st.text(f"{metric_name} | {value}")
+            # Need to define first and third summary
+            # metric for field players vs. goalkeepers
+            first_label = (
+                'Clean Sheets' if stats.get('Position') == 'GK'
+                else 'Total Goals Scored'
+            )
+            first_metric = (
+                stats.get('Clean Sheets') if stats.get('Position') == 'GK'
+                else stats.get('Goals Scored')
+            )
+            third_metric = (
+                stats.get('Goalkeeper Minutes Played') if stats.get('Position') == 'GK'
+                else stats.get('Total Minutes Played')
+            )
+            metric_col1, metric_col2, metric_col3 = st.columns(3)
 
-    except Exception as e:
-        st.error(f"Player {player_name} not found.")
+            with metric_col1:
+                st.metric(label=first_label, value=first_metric)
+            with metric_col2:
+                st.metric(label="Plus / Minus", value=stats.get("Plus/Minus", "0"))
+            with metric_col3:
+                st.metric(label="Total Minutes Played", value=third_metric)
+
+            st.divider()
+
+            # 3. Remainder of metrics (2 cols)
+
+            # Dynamically split the remaining items into two columns
+            bottom_col1, bottom_col2 = st.columns(2)
+            # Display Age and Club first
+            age_metric = stats.get("Age", "0")
+            club_metric = stats.get("Club", "0")
+            wins_metric = stats.get("Wins", "0")
+            losses_metric = stats.get("Losses", "0")
+            yc_metric = stats.get("Yellow Cards", "0")
+            rc_metric = stats.get("Red Cards", "0")
+            with bottom_col1:
+                st.text(f"Age | {age_metric}")
+                if position == 'GK':
+                    st.text(f"Wins | {wins_metric}")
+                st.text(f"Yellow Cards | {yc_metric}")
+            with bottom_col2:
+                st.text(f"Club | {club_metric}")
+                if position == 'GK':
+                    st.text(f"Losses | {losses_metric}")
+                st.text(f"Red Cards | {rc_metric}")
+
+            # Exclude the keys we already displayed above
+            displayed_keys = [
+                "Goals Scored", "Plus/Minus", "Total Minutes Played",
+                "Team", "Position", "Player Name", "Age", "Club",
+                "Yellow Cards", "Red Cards", "Wins", "Losses",
+                "Clean Sheets", "Goalkeeper Minutes Played"
+            ]
+            remaining_metrics = {k: v for k, v in stats.items() if k not in displayed_keys}
+
+            for index, (metric_name, value) in enumerate(remaining_metrics.items()):
+                # Alternates items between column 1 and column 2
+                if index % 2 == 0:
+                    with bottom_col1:
+                        st.text(f"{metric_name} | {value}")
+                else:
+                    with bottom_col2:
+                        st.text(f"{metric_name} | {value}")
+             # Increment num of containers
+            num_player_conts += 1
+
+        except Exception as e:
+            st.error(f"Player {player_name} not found.")
 
