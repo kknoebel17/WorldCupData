@@ -1,3 +1,6 @@
+[server]
+runOnSave = true
+
 [theme]
 # Colors
 base="light"
