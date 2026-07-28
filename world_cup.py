@@ -66,12 +66,11 @@ def render_player_card(target_player_name, container_index):
             player_det = players_api.get_player_by_name(target_player_name)
 
             try:
-                # Transpose or pivot your data if it's stored vertically,
-                # but for clean dictionary lookups, we convert it to a Series/Dict:
+                # For clean dictionary lookups, we convert it to a Series/Dict:
                 # Assumes player_det has 'Metric' as index and values in the first column
                 stats = player_det.iloc[:, 0].to_dict()
 
-                # 1. HEADER (Name + Picture Side-by-Side + Close Button)
+                # 1. Header (Name + Picture Side-by-Side + Close Button)
                 top_col1, top_col2 = st.columns([3, 1])
 
                 with top_col1:
