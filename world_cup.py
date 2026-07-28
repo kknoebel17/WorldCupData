@@ -62,8 +62,6 @@ def render_player_card(target_player_name, container_index):
     ):
         if target_player_name and str(target_player_name).strip() != "":
             st.divider()
-            st.subheader('Single player statistics')
-            header = f"World Cup 2026 statistics for {target_player_name}"
             players_api = Players()
             player_det = players_api.get_player_by_name(target_player_name)
 
