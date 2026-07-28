@@ -183,6 +183,17 @@ with row_layout_cols[0]:
                     st.markdown(f"### {player_team}")
                     st.markdown(f"### {position}")
 
+                    # Close trigger action for the primary card slot
+                    if st.button("Close Profile", key=f"clear_slot_{num_player_conts}"):
+                        # If a comparison player exists, shift them up to primary instead of blanking out completely
+                        if st.session_state.compare_player_name:
+                            st.session_state.active_player_name = st.session_state.compare_player_name
+                            st.session_state.compare_player_name = ""
+                        else:
+                            st.session_state.active_player_name = ""
+                        st.session_state.grid_version += 1
+                        st.rerun()
+
                 with top_col2:
                     # Replace with your actual image logic (URL column, file path, or default fallback)
                     image_path = Path('images.png')
@@ -293,6 +304,17 @@ if st.session_state.active_player_name and st.session_state.compare_player_name:
                         position_comp = stats_comp.get("Position")
                         st.markdown(f"### {player_team_comp}")
                         st.markdown(f"### {position_comp}")
+
+                        # Close trigger action for the primary card slot
+                        if st.button("Close Profile", key=f"clear_slot_{num_player_conts}"):
+                            # If a comparison player exists, shift them up to primary instead of blanking out completely
+                            if st.session_state.compare_player_name:
+                                st.session_state.active_player_name = st.session_state.compare_player_name
+                                st.session_state.compare_player_name = ""
+                            else:
+                                st.session_state.active_player_name = ""
+                            st.session_state.grid_version += 1
+                            st.rerun()
 
                     with top_col2_comp:
                         image_path_comp = Path('images.png')
