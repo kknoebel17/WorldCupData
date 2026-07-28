@@ -22,7 +22,9 @@ AGGRID_THEME = 'material' # options: balham, streamlit, alpine, balham, material
 PLAYER_SUMM_TEXT = (
     "Click on a player's name to see statistics for that"
     " player below this table. You can also search for a player"
-    " by name in the Navigation Panel to the left."
+    " by name in the Navigation Panel to the left. A second player"
+    " card can be added next to the first for comparison. This second"
+    " player can be added through table selection or search."
 )
 
 # State
