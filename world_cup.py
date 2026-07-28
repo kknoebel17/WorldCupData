@@ -49,6 +49,126 @@ data_load_state.text("Done! All 2026 FIFA World Cup players are here.")
 if "my_data" not in st.session_state:
     st.session_state.my_data = all_players.reset_index(drop=True)
 
+# Functions
+def render_player_card(target_player_name, container_index):
+    """
+    Renders a single player card container.
+    """
+    with st.container(
+            border=True,
+            key=f"single_player_conts_{container_index}",
+            width='content',
+            horizontal_alignment='distribute',
+    ):
+        if target_player_name and str(target_player_name).strip() != "":
+            st.divider()
+            st.subheader('Single player statistics')
+            header = f"World Cup 2026 statistics for {target_player_name}"
+            players_api = Players()
+            player_det = players_api.get_player_by_name(target_player_name)
+
+            try:
+                # Transpose or pivot your data if it's stored vertically,
+                # but for clean dictionary lookups, we convert it to a Series/Dict:
+                # Assumes player_det has 'Metric' as index and values in the first column
+                stats = player_det.iloc[:, 0].to_dict()
+
+                # 1. HEADER (Name + Picture Side-by-Side + Close Button)
+                top_col1, top_col2 = st.columns([3, 1])
+
+                with top_col1:
+                    st.markdown(f"## {target_player_name}")
+                    player_team = stats.get("Team")
+                    position = stats.get("Position")
+                    st.markdown(f"### {player_team}")
+                    st.markdown(f"### {position}")
+
+                    # Close trigger action
+                    if st.button("Close Profile", key=f"clear_slot_{container_index}"):
+                        if container_index == 0:
+                            # Primary card close: shift comp card up if it exists
+                            if st.session_state.compare_player_name:
+                                st.session_state.active_player_name = st.session_state.compare_player_name
+                                st.session_state.compare_player_name = ""
+                            else:
+                                st.session_state.active_player_name = ""
+                        else:
+                            # Secondary comparison card close
+                            st.session_state.compare_player_name = ""
+
+                        st.session_state.grid_version += 1
+                        st.rerun()
+
+                with top_col2:
+                    image_path = Path('images.png')
+                    st.image(image_path, width=100)
+
+                st.divider()
+
+                # 2. Summary Metrics (3 cols)
+                first_label = (
+                    'Clean Sheets' if stats.get('Position') == 'GK'
+                    else 'Total Goals Scored'
+                )
+                first_metric = (
+                    stats.get('Clean Sheets') if stats.get('Position') == 'GK'
+                    else stats.get('Goals Scored')
+                )
+                third_metric = (
+                    stats.get('Goalkeeper Minutes Played') if stats.get('Position') == 'GK'
+                    else stats.get('Total Minutes Played')
+                )
+                metric_col1, metric_col2, metric_col3 = st.columns(3)
+
+                with metric_col1:
+                    st.metric(label=first_label, value=first_metric)
+                with metric_col2:
+                    st.metric(label="Plus / Minus", value=stats.get("Plus/Minus", "0"))
+                with metric_col3:
+                    st.metric(label="Total Minutes Played", value=third_metric)
+
+                st.divider()
+
+                # 3. Remainder of metrics (2 cols)
+                bottom_col1, bottom_col2 = st.columns(2)
+                age_metric = stats.get("Age", "0")
+                club_metric = stats.get("Club", "0")
+                wins_metric = stats.get("Wins", "0")
+                losses_metric = stats.get("Losses", "0")
+                yc_metric = stats.get("Yellow Cards", "0")
+                rc_metric = stats.get("Red Cards", "0")
+
+                with bottom_col1:
+                    st.text(f"Age | {age_metric}")
+                    if position == 'GK':
+                        st.text(f"Wins | {wins_metric}")
+                    st.text(f"Yellow Cards | {yc_metric}")
+                with bottom_col2:
+                    st.text(f"Club | {club_metric}")
+                    if position == 'GK':
+                        st.text(f"Losses | {losses_metric}")
+                    st.text(f"Red Cards | {rc_metric}")
+
+                # Exclude the keys we already displayed above
+                displayed_keys = [
+                    "Goals Scored", "Plus/Minus", "Total Minutes Played",
+                    "Team", "Position", "Player Name", "Age", "Club",
+                    "Yellow Cards", "Red Cards", "Wins", "Losses",
+                    "Clean Sheets", "Goalkeeper Minutes Played"
+                ]
+                remaining_metrics = {k: v for k, v in stats.items() if k not in displayed_keys}
+
+                for index, (metric_name, value) in enumerate(remaining_metrics.items()):
+                    if index % 2 == 0:
+                        with bottom_col1:
+                            st.text(f"{metric_name} | {value}")
+                    else:
+                        with bottom_col2:
+                            st.text(f"{metric_name} | {value}")
+
+            except Exception as e:
+                st.error(f"Player {target_player_name} not found: {e}.")
+
 # Widgets
 with st.sidebar:
     st.header("Navigation Panel")
@@ -149,242 +269,28 @@ if st.session_state.active_player_name and st.session_state.compare_player_name:
 else:
     row_layout_cols = st.columns(1)
 
-# First single player container
-with row_layout_cols[0]:
-    num_player_conts = 0
-    with st.container(
-            border=True,
-            key=f"single_player_conts_{num_player_conts}",
-            width='content',
-            horizontal_alignment='distribute',
-    ):
-        player_name = st.session_state.active_player_name
+# -------------------------------------------------------------
+# 2. RUNTIME CONDITIONAL COMPARISON GRID EXECUTION
+# -------------------------------------------------------------
+if st.session_state.active_player_name:
 
-        if player_name and str(player_name).strip() != "":
-            st.divider()
-            st.subheader('Single player statistics')
-            header = f"World Cup 2026 statistics for {player_name}"
-            players = Players()
-            player_det = players.get_player_by_name(player_name)
+    # Fork screen space depending on comparison slot status
+    if st.session_state.compare_player_name:
+        row_layout_cols = st.columns(2)
 
-            try:
-                # For clean dictionary lookups, we convert table to a Series/Dict:
-                # Assumes player_det has 'Metric' as index and values in the first column
-                stats = player_det.iloc[:, 0].to_dict()
+        # Explicitly isolate card 1 to column index 0
+        with row_layout_cols[0]:
+            render_player_card(st.session_state.active_player_name, container_index=0)
 
-                # 1. Header (Name + Picture Side-by-Side)
-                # Adjust widths (e.g., 3 parts name, 1 part image)
-                top_col1, top_col2 = st.columns([3, 1])
+        # Explicitly isolate card 2 to column index 1
+        with row_layout_cols[1]:
+            render_player_card(st.session_state.compare_player_name, container_index=1)
 
-                with top_col1:
-                    st.markdown(f"## {player_name}")
-                    player_team = stats.get("Team")
-                    position = stats.get("Position")
-                    st.markdown(f"### {player_team}")
-                    st.markdown(f"### {position}")
+    else:
+        row_layout_cols = st.columns(1)
+        # Full width fallback single column layout
+        with row_layout_cols[0]:
+            render_player_card(st.session_state.active_player_name, container_index=0)
 
-                    # Close trigger action for the primary card slot
-                    if st.button("Close Profile", key=f"clear_slot_{num_player_conts}"):
-                        # If a comparison player exists, shift them up to primary instead of blanking out completely
-                        if st.session_state.compare_player_name:
-                            st.session_state.active_player_name = st.session_state.compare_player_name
-                            st.session_state.compare_player_name = ""
-                        else:
-                            st.session_state.active_player_name = ""
-                        st.session_state.grid_version += 1
-                        st.rerun()
-
-                with top_col2:
-                    # Replace with your actual image logic (URL column, file path, or default fallback)
-                    image_path = Path('images.png')
-                    st.image(image_path, width=100)
-
-                st.divider()
-
-                # 2. Summary Metrics (3 cols)
-
-                # Need to define first and third summary
-                # metric for field players vs. goalkeepers
-                first_label = (
-                    'Clean Sheets' if stats.get('Position') == 'GK'
-                    else 'Total Goals Scored'
-                )
-                first_metric = (
-                    stats.get('Clean Sheets') if stats.get('Position') == 'GK'
-                    else stats.get('Goals Scored')
-                )
-                third_metric = (
-                    stats.get('Goalkeeper Minutes Played') if stats.get('Position') == 'GK'
-                    else stats.get('Total Minutes Played')
-                )
-                metric_col1, metric_col2, metric_col3 = st.columns(3)
-
-                with metric_col1:
-                    st.metric(label=first_label, value=first_metric)
-                with metric_col2:
-                    st.metric(label="Plus / Minus", value=stats.get("Plus/Minus", "0"))
-                with metric_col3:
-                    st.metric(label="Total Minutes Played", value=third_metric)
-
-                st.divider()
-
-                # 3. Remainder of metrics (2 cols)
-
-                # Dynamically split the remaining items into two columns
-                bottom_col1, bottom_col2 = st.columns(2)
-                # Display Age and Club first
-                age_metric = stats.get("Age", "0")
-                club_metric = stats.get("Club", "0")
-                wins_metric = stats.get("Wins", "0")
-                losses_metric = stats.get("Losses", "0")
-                yc_metric = stats.get("Yellow Cards", "0")
-                rc_metric = stats.get("Red Cards", "0")
-                with bottom_col1:
-                    st.text(f"Age | {age_metric}")
-                    if position == 'GK':
-                        st.text(f"Wins | {wins_metric}")
-                    st.text(f"Yellow Cards | {yc_metric}")
-                with bottom_col2:
-                    st.text(f"Club | {club_metric}")
-                    if position == 'GK':
-                        st.text(f"Losses | {losses_metric}")
-                    st.text(f"Red Cards | {rc_metric}")
-
-                # Exclude the keys we already displayed above
-                displayed_keys = [
-                    "Goals Scored", "Plus/Minus", "Total Minutes Played",
-                    "Team", "Position", "Player Name", "Age", "Club",
-                    "Yellow Cards", "Red Cards", "Wins", "Losses",
-                    "Clean Sheets", "Goalkeeper Minutes Played"
-                ]
-                remaining_metrics = {k: v for k, v in stats.items() if k not in displayed_keys}
-
-                for index, (metric_name, value) in enumerate(remaining_metrics.items()):
-                    # Alternates items between column 1 and column 2
-                    if index % 2 == 0:
-                        with bottom_col1:
-                            st.text(f"{metric_name} | {value}")
-                    else:
-                        with bottom_col2:
-                            st.text(f"{metric_name} | {value}")
-                # Increment num of containers
-                num_player_conts += 1
-
-            except Exception as e:
-                st.error(f"Player {player_name} not found.")
-
-# Second player container
-if st.session_state.active_player_name and st.session_state.compare_player_name:
-    with row_layout_cols[1]:
-        num_player_conts = 1
-        with st.container(
-                border=True,
-                key=f"single_player_conts_{num_player_conts}",
-                width='content',
-                horizontal_alignment='distribute',
-        ):
-            player_name_comp = st.session_state.compare_player_name
-
-            if player_name_comp and str(player_name_comp).strip() != "":
-                st.divider()
-                st.subheader('Single player statistics')
-                header_comp = f"World Cup 2026 statistics for {player_name_comp}"
-                players_comp = Players()
-                player_det_comp = players_comp.get_player_by_name(player_name_comp)
-
-                try:
-                    stats_comp = player_det_comp.iloc[:, 0].to_dict()
-
-                    # 1. HEADER (Name + Picture Side-by-Side)
-                    top_col1_comp, top_col2_comp = st.columns([3, 1])
-
-                    with top_col1_comp:
-                        st.markdown(f"## {player_name_comp}")
-                        player_team_comp = stats_comp.get("Team")
-                        position_comp = stats_comp.get("Position")
-                        st.markdown(f"### {player_team_comp}")
-                        st.markdown(f"### {position_comp}")
-
-                        # Close trigger action for the primary card slot
-                        if st.button("Close Profile", key=f"clear_slot_{num_player_conts}"):
-                            # If a comparison player exists, shift them up to primary instead of blanking out completely
-                            if st.session_state.compare_player_name:
-                                st.session_state.active_player_name = st.session_state.compare_player_name
-                                st.session_state.compare_player_name = ""
-                            else:
-                                st.session_state.active_player_name = ""
-                            st.session_state.grid_version += 1
-                            st.rerun()
-
-                    with top_col2_comp:
-                        image_path_comp = Path('images.png')
-                        st.image(image_path_comp, width=100)
-
-                    st.divider()
-
-                    # 2. Summary Metrics (3 cols)
-                    first_label_comp = (
-                        'Clean Sheets' if stats_comp.get('Position') == 'GK'
-                        else 'Total Goals Scored'
-                    )
-                    first_metric_comp = (
-                        stats_comp.get('Clean Sheets') if stats_comp.get('Position') == 'GK'
-                        else stats_comp.get('Goals Scored')
-                    )
-                    third_metric_comp = (
-                        stats_comp.get('Goalkeeper Minutes Played') if stats_comp.get('Position') == 'GK'
-                        else stats_comp.get('Total Minutes Played')
-                    )
-                    metric_col1_comp, metric_col2_comp, metric_col3_comp = st.columns(3)
-
-                    with metric_col1_comp:
-                        st.metric(label=first_label_comp, value=first_metric_comp)
-                    with metric_col2_comp:
-                        st.metric(label="Plus / Minus", value=stats_comp.get("Plus/Minus", "0"))
-                    with metric_col3_comp:
-                        st.metric(label="Total Minutes Played", value=third_metric_comp)
-
-                    st.divider()
-
-                    # 3. Remainder of metrics (2 cols)
-                    bottom_col1_comp, bottom_col2_comp = st.columns(2)
-
-                    age_metric_comp = stats_comp.get("Age", "0")
-                    club_metric_comp = stats_comp.get("Club", "0")
-                    wins_metric_comp = stats_comp.get("Wins", "0")
-                    losses_metric_comp = stats_comp.get("Losses", "0")
-                    yc_metric_comp = stats_comp.get("Yellow Cards", "0")
-                    rc_metric_comp = stats_comp.get("Red Cards", "0")
-
-                    with bottom_col1_comp:
-                        st.text(f"Age | {age_metric_comp}")
-                        if position_comp == 'GK':
-                            st.text(f"Wins | {wins_metric_comp}")
-                        st.text(f"Yellow Cards | {yc_metric_comp}")
-                    with bottom_col2_comp:
-                        st.text(f"Club | {club_metric_comp}")
-                        if position_comp == 'GK':
-                            st.text(f"Losses | {losses_metric_comp}")
-                        st.text(f"Red Cards | {rc_metric_comp}")
-
-                    displayed_keys_comp = [
-                        "Goals Scored", "Plus/Minus", "Total Minutes Played",
-                        "Team", "Position", "Player Name", "Age", "Club",
-                        "Yellow Cards", "Red Cards", "Wins", "Losses",
-                        "Clean Sheets", "Goalkeeper Minutes Played"
-                    ]
-                    remaining_metrics_comp = {k: v for k, v in stats_comp.items() if k not in displayed_keys_comp}
-
-                    for index, (metric_name, value) in enumerate(remaining_metrics_comp.items()):
-                        if index % 2 == 0:
-                            with bottom_col1_comp:
-                                st.text(f"{metric_name} | {value}")
-                        else:
-                            with bottom_col2_comp:
-                                st.text(f"{metric_name} | {value}")
-                                num_player_conts += 1
-
-                except Exception as e:
-                    st.error(f"Player {player_name_comp} not found.")
 
 
