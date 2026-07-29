@@ -6,6 +6,7 @@ runOnSave = true
 base="light"
 backgroundColor=""
 secondaryBackgroundColor="#95A3B3"
+primaryColor="#95A3B3"
 codeBackgroundColor="#95A3B3"
 textColor="#1D1E2C"
 linkColor="#E1DD8F"
