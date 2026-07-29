@@ -33,6 +33,7 @@ PLAYER_SUMM_TEXT = (
     " card can be added next to the first for comparison. This second"
     " player can be added through table selection or search."
 )
+Y_LIM_PADDING: float = 1.2
 
 # State
 if "active_player_name" not in st.session_state:
@@ -56,8 +57,16 @@ def get_cached_player_detail(player_name):
     players_api = Players()
     return players_api.get_player_by_name(player_name)
 
+# Get max value of numerical player columns for charts
+@st.cache_data
+def get_max_values():
+    players = Players()
+    maxes = players.get_max_vals()
+    return maxes
+
 data_load_state = st.text('Getting stats for all players...')
 all_players = get_all_players()
+max_vals = get_max_values()
 data_load_state.text("Done! All 2026 FIFA World Cup players are here.")
 
 if "my_data" not in st.session_state:
@@ -69,7 +78,8 @@ def render_player_subgrid(
         container_index,
         html_obj,
         nivo_obj,
-        unique_canvas_key
+        unique_canvas_key,
+        max_values
 ):
     """
     Renders the internal content of a player statistics card using native
@@ -169,14 +179,18 @@ def render_player_subgrid(
                 for m in chosen_metrics:
                     try:
                         metric_value = numerical_metrics.get(m, 0)
+                        max_val = max_values[m]
                         chart_data.append({
                             "metric": str(m),
-                            "value": float(metric_value)
+                            "value": float(metric_value),
+                            "max_y": float(max_val)*Y_LIM_PADDING,
                         })
-                    except Exception:
+                    except Exception as e:
+                        print(e)
                         continue
 
                 if len(chart_data) > 0:
+                    max_y_lim = max([d['max_y'] for d in chart_data])
                     with html_obj.div(
                             key=f"chart_active_node_{container_index}_{safe_player_key}",
                             style={"height": 220, "width": "100%"}
@@ -192,7 +206,8 @@ def render_player_subgrid(
                             axisBottom={"tickSize": 5, "tickPadding": 5, "tickRotation": -15},
                             labelTextColor={"from": "theme", "modifiers": [["darker", 1.6]]},
                             animate=False,
-                            motionConfig="none"
+                            motionConfig="none",
+                            maxValue=max_y_lim if max_y_lim>0 else None,
                         )
 
         # 3. Remainder of metrics (2 cols)
@@ -379,6 +394,7 @@ if st.session_state.active_player_name:
                 html_obj=html,
                 nivo_obj=nivo,
                 unique_canvas_key="master_deck_canvas_left",
+                max_values=max_vals,
             )
 
         # COLUMN 2: Secondary comparative selection slot (Card B)
@@ -389,6 +405,7 @@ if st.session_state.active_player_name:
                 html_obj=html,
                 nivo_obj=nivo,
                 unique_canvas_key="master_deck_canvas_right",
+                max_values=max_vals,
             )
 
     else:
@@ -400,4 +417,5 @@ if st.session_state.active_player_name:
                 html_obj=html,
                 nivo_obj=nivo,
                 unique_canvas_key="master_deck_canvas_left",
+                max_values=max_vals,
             )
