@@ -148,7 +148,7 @@ def render_player_subgrid(
                 continue
 
         # Set palettes for each card
-        chart_palette = "greens" if container_index == 0 else "accent"
+        chart_palette = "#166256" if container_index == 0 else "#dfc578"
 
         # Inject the target player name to ensure a globally unique layout key wrapper
         safe_player_key = "".join(c for c in target_player_name if c.isalnum())
@@ -188,8 +188,7 @@ def render_player_subgrid(
                             indexBy="metric",
                             margin={"top": 20, "right": 20, "bottom": 50, "left": 50},
                             padding=0.3,
-                            # FIX: Use absolute safety schema formatting
-                            colors={"scheme": chart_palette},
+                            colors=chart_palette,
                             axisBottom={"tickSize": 5, "tickPadding": 5, "tickRotation": -15},
                             labelTextColor={"from": "theme", "modifiers": [["darker", 1.6]]},
                             animate=False,
