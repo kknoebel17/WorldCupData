@@ -1,13 +1,11 @@
 """Webpage for FIFA World Cup 2026 data using streamlit."""
-import time
+
 from pathlib import Path
 
 import streamlit as st
 from streamlit_elements import (
-    dashboard,
     elements,
     html,
-    mui,
     nivo,
 )
 from st_aggrid import (
@@ -51,6 +49,13 @@ def get_all_players():
     all_players = players.get_player_summaries()
     return all_players
 
+# Cache individual player requests to ensure zero redundant queries
+# trigger unhandled webhook tracking loops in AgGrid backends on layout updates
+@st.cache_data
+def get_cached_player_detail(player_name):
+    players_api = Players()
+    return players_api.get_player_by_name(player_name)
+
 data_load_state = st.text('Getting stats for all players...')
 all_players = get_all_players()
 data_load_state.text("Done! All 2026 FIFA World Cup players are here.")
@@ -59,7 +64,13 @@ if "my_data" not in st.session_state:
     st.session_state.my_data = all_players.reset_index(drop=True)
 
 # Functions
-def render_player_subgrid(target_player_name, container_index):
+def render_player_subgrid(
+        target_player_name,
+        container_index,
+        html_obj,
+        nivo_obj,
+        unique_canvas_key
+):
     """
     Renders the internal content of a player statistics card using native
     Streamlit layout elements, and prints out working Nivo visual data charts.
@@ -67,10 +78,7 @@ def render_player_subgrid(target_player_name, container_index):
     if not target_player_name or str(target_player_name).strip() == "":
         return
 
-    st.divider()
-    players_api = Players()
-    player_det = players_api.get_player_by_name(target_player_name)
-
+    player_det = get_cached_player_detail(target_player_name)
     try:
         # For clean dictionary lookups, we convert it to a Series/Dict:
         # Assumes player_det has 'Metric' as index and values in the first column
@@ -140,55 +148,54 @@ def render_player_subgrid(target_player_name, container_index):
                 continue
 
         # Set palettes for each card
-        chart_palette = "greens" if container_index == 0 else "gold"
+        chart_palette = "greens" if container_index == 0 else "accent"
+
+        # Inject the target player name to ensure a globally unique layout key wrapper
+        safe_player_key = "".join(c for c in target_player_name if c.isalnum())
 
         # Multi-select widget to pick which statistics to map
         chosen_metrics = st.multiselect(
             "Select metrics to chart",
             options=list(numerical_metrics.keys()),
             default=None,
-            key=f"chart_metrics_select_{container_index}"
+            key=f"chart_metrics_select_{container_index}_{safe_player_key}"
         )
 
-        if chosen_metrics:
-            # Construct the structural dataset for Nivo Bar consumption based on choices
-            chart_data = [
-                {"metric": m, "value": numerical_metrics[m]}
-                for m in chosen_metrics
-            ]
-            # Inject the target player name to ensure a globally unique layout key wrapper
-            safe_player_key = "".join(c for c in target_player_name if c.isalnum())
+        # Open an independent elements canvas for the chart frame
+        with elements(f"{unique_canvas_key}_{container_index}_{safe_player_key}"):
 
-            # Open an independent elements canvas for the chart frame
-            with elements(f"player_chart_canvas_{container_index}_{safe_player_key}"):
-                with html.div(
-                        key=f"chart_wrap_{container_index}_{safe_player_key}",
-                        style={"height": 220, "width": "100%"}
-                ):
-                    nivo.Bar(
-                        data=chart_data,
-                        keys=["value"],
-                        indexBy="metric",
-                        margin={
-                            "top": 20,
-                            "right": 20,
-                            "bottom": 50,
-                            "left": 50
-                        },
-                        padding=0.3,
-                        colors={"scheme": chart_palette},
-                        axisBottom={
-                            "tickSize": 5,
-                            "tickPadding": 5,
-                            "tickRotation": -15,
-                        },
-                        labelTextColor={
-                            "from": "theme",
-                            "modifiers": [["darker", 1.6]]
-                        },
-                        animate=True,
-                        motionConfig="gentle"
-                    )
+            if chosen_metrics:
+                chart_data = []
+                for m in chosen_metrics:
+                    try:
+                        metric_value = numerical_metrics.get(m, 0)
+                        chart_data.append({
+                            "metric": str(m),
+                            "value": float(metric_value)
+                        })
+                    except Exception:
+                        continue
+
+                if len(chart_data) > 0:
+                    with html_obj.div(
+                            key=f"chart_active_node_{container_index}_{safe_player_key}",
+                            style={"height": 220, "width": "100%"}
+                    ):
+                        nivo_obj.Bar(
+                            key=f"nivo_bar_element_{container_index}_{safe_player_key}",
+                            data=chart_data,
+                            keys=["value"],
+                            indexBy="metric",
+                            margin={"top": 20, "right": 20, "bottom": 50, "left": 50},
+                            padding=0.3,
+                            # FIX: Use absolute safety schema formatting
+                            colors={"scheme": chart_palette},
+                            axisBottom={"tickSize": 5, "tickPadding": 5, "tickRotation": -15},
+                            labelTextColor={"from": "theme", "modifiers": [["darker", 1.6]]},
+                            animate=False,
+                            motionConfig="none"
+                        )
+
         # 3. Remainder of metrics (2 cols)
         bottom_col1, bottom_col2 = st.columns(2)
         age_metric = stats.get("Age", "0")
@@ -361,29 +368,37 @@ if selected_player and str(
 # Grid for player cards
 if st.session_state.active_player_name:
 
-    # Fork screen space depending on
-    # comparison slot status using native columns
+    # Fork screen space depending on comparison slot status using native columns
     if st.session_state.compare_player_name:
-        row_layout_cols = st.columns(2)  # This returns a list of two column objects
+        row_layout_cols = st.columns(2)
 
-        # Col 1: Primary active selection slot (Card A)
-        with row_layout_cols[0]:  # Added explicit list index indicator
+        # COLUMN 1: Primary active selection slot (Card A)
+        with row_layout_cols[0]:
             render_player_subgrid(
                 st.session_state.active_player_name,
-                container_index=0
+                container_index=0,
+                html_obj=html,
+                nivo_obj=nivo,
+                unique_canvas_key="master_deck_canvas_left",
             )
 
-        # Col 2: Secondary comparative selection slot (Card B)
-        with row_layout_cols[1]:  # Added explicit list index indicator
+        # COLUMN 2: Secondary comparative selection slot (Card B)
+        with row_layout_cols[1]:
             render_player_subgrid(
                 st.session_state.compare_player_name,
-                container_index=1
+                container_index=1,
+                html_obj=html,
+                nivo_obj=nivo,
+                unique_canvas_key="master_deck_canvas_right",
             )
 
     else:
-        row_layout_cols = st.columns(1)  # Fallback to full width if only one player is active
-        with row_layout_cols[0]:  # Added explicit list index indicator
+        row_layout_cols = st.columns(1)
+        with row_layout_cols[0]:
             render_player_subgrid(
                 st.session_state.active_player_name,
-                container_index=0
+                container_index=0,
+                html_obj=html,
+                nivo_obj=nivo,
+                unique_canvas_key="master_deck_canvas_left",
             )
