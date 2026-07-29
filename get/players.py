@@ -36,6 +36,15 @@ class Players:
 
         return df_players_summary
 
+    def get_max_vals(self)-> Dict[str,int]:
+        """Get the max value for numerical columns."""
+        cols_to_use = list(const.PLAYER_COLS.values())[5:]
+        num_columns = self.all_players.rename(columns=const.PLAYER_COLS)
+        num_columns = num_columns[cols_to_use]
+        max_vals = num_columns.fillna(0).max().to_dict()
+
+        return max_vals
+
     def get_player_by_name(self, player_name: str) -> Union[None, pd.DataFrame]:
         """Get player details by name."""
         # Clean user inputs

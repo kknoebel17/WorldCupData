@@ -21,6 +21,21 @@ def test_get_player_summaries():
     assert all_pls.columns.tolist() == list(const.PLAYER_COLS.values())[:5]
     assert len(all_pls) == UNIQUE_PLAYERS
 
+def test_get_max_vals():
+    pls = Players()
+    # Get max values to test
+    test_vals = {}
+    test_frame = pls.all_players.rename(columns=const.PLAYER_COLS)
+    for col in test_frame:
+        try:
+            this_max = test_frame[col].max()
+            test_vals[col] = this_max
+        except Exception as e:
+            print(e)
+    max_vals = pls.get_max_vals()
+    for k in max_vals.keys():
+        assert max_vals[k] == test_vals[k]
+
 @pytest.mark.parametrize(
     'player_name, position', [
         ('Amine Gouiri', 'FW'),
