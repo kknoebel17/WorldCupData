@@ -13,7 +13,6 @@ from models.players import PlayerBase, FieldPlayer, GoalKeeper
 
 # Globals
 GK_POS_CODE: str = 'GK'
-NON_NUMERIC_COLS = ["Player Name", "Team", "Position","Age", "Club"]
 
 class Players:
     def __init__(self):
@@ -36,6 +35,15 @@ class Players:
         df_players_summary = df_players_summary[cols_to_use]
 
         return df_players_summary
+
+    def get_max_vals(self)-> Dict[str,int]:
+        """Get the max value for numerical columns."""
+        cols_to_use = list(const.PLAYER_COLS.values())[5:]
+        num_columns = self.all_players.rename(columns=const.PLAYER_COLS)
+        num_columns = num_columns[cols_to_use]
+        max_vals = num_columns.fillna(0).max().to_dict()
+
+        return max_vals
 
     def get_player_by_name(self, player_name: str) -> Union[None, pd.DataFrame]:
         """Get player details by name."""
@@ -76,7 +84,7 @@ class Players:
         try:
             # Replace empty strings in numeric
             for col in df_det_corr.columns:
-                if col in NON_NUMERIC_COLS:
+                if col in const.NON_NUMERIC_COLS:
                     pass
                 else:
                     df_det_corr[col] = df_det_corr[col].replace('', 0)
