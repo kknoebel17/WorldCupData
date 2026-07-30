@@ -79,7 +79,8 @@ def render_player_subgrid(
         html_obj,
         nivo_obj,
         unique_canvas_key,
-        max_values
+        max_values,
+        chosen_metrics_override=None,
 ):
     """
     Renders the internal content of a player statistics card using native
@@ -163,13 +164,17 @@ def render_player_subgrid(
         # Inject the target player name to ensure a globally unique layout key wrapper
         safe_player_key = "".join(c for c in target_player_name if c.isalnum())
 
-        # Multi-select widget to pick which statistics to map
-        chosen_metrics = st.multiselect(
-            "Select metrics to chart",
-            options=list(numerical_metrics.keys()),
-            default=None,
-            key=f"chart_metrics_select_{container_index}_{safe_player_key}"
-        )
+        # If an override is passed from the parent layout, use it.
+        # Otherwise, render the local standalone selector.
+        if chosen_metrics_override is not None:
+            chosen_metrics = chosen_metrics_override
+        else:
+            chosen_metrics = st.multiselect(
+                "Select metrics to chart",
+                options=list(numerical_metrics.keys()),
+                default=None,
+                key=f"chart_metrics_select_{container_index}_{safe_player_key}"
+            )
 
         # Open an independent elements canvas for the chart frame
         with elements(f"{unique_canvas_key}_{container_index}_{safe_player_key}"):
@@ -178,13 +183,16 @@ def render_player_subgrid(
                 chart_data = []
                 for m in chosen_metrics:
                     try:
-                        metric_value = numerical_metrics.get(m, 0)
-                        max_val = max_values[m]
-                        chart_data.append({
-                            "metric": str(m),
-                            "value": float(metric_value),
-                            "max_y": float(max_val)*Y_LIM_PADDING,
-                        })
+                        # Only map the metric if it actually
+                        # exists for this specific player
+                        if m in numerical_metrics:
+                            metric_value = numerical_metrics.get(m, 0)
+                            max_val = max_values[m]
+                            chart_data.append({
+                                "metric": str(m),
+                                "value": float(metric_value),
+                                "max_y": float(max_val)*Y_LIM_PADDING,
+                            })
                     except Exception as e:
                         print(e)
                         continue
@@ -379,43 +387,62 @@ if selected_player and str(
     st.session_state.grid_version += 1
     st.rerun()
 
+# Determine if we are comparing two players
+is_comparing = bool(
+    st.session_state.active_player_name
+    and st.session_state.compare_player_name
+)
+# Hoist the Metric Selector to the top level
+chosen_metrics_global = None
+if is_comparing:
+    # Get all available numerical metrics combined from both players to populate options
+    p1_stats = get_cached_player_detail(st.session_state.active_player_name).iloc[:, 0].to_dict()
+    p2_stats = get_cached_player_detail(st.session_state.compare_player_name).iloc[:, 0].to_dict()
+
+    # Combine unique valid keys
+    all_keys = list(set(p1_stats.keys()) | set(p2_stats.keys()))
+    valid_options = [k for k in all_keys if k not in NON_NUMERIC_COLS]
+
+    # This selector spans the width of both cards below it
+    chosen_metrics_global = st.multiselect(
+        "Select metrics to chart",
+        options=sorted(valid_options),
+        default=None,
+        key="global_comparison_metrics_select"
+    )
+
 # Grid for player cards
-if st.session_state.active_player_name:
+# Create the side-by-side columns
+if is_comparing:
+    col1, col2 = st.columns(2)
 
-    # Fork screen space depending on comparison slot status using native columns
-    if st.session_state.compare_player_name:
-        row_layout_cols = st.columns(2)
-
-        # COLUMN 1: Primary active selection slot (Card A)
-        with row_layout_cols[0]:
-            render_player_subgrid(
-                st.session_state.active_player_name,
-                container_index=0,
-                html_obj=html,
-                nivo_obj=nivo,
-                unique_canvas_key="master_deck_canvas_left",
-                max_values=max_vals,
-            )
-
-        # COLUMN 2: Secondary comparative selection slot (Card B)
-        with row_layout_cols[1]:
-            render_player_subgrid(
-                st.session_state.compare_player_name,
-                container_index=1,
-                html_obj=html,
-                nivo_obj=nivo,
-                unique_canvas_key="master_deck_canvas_right",
-                max_values=max_vals,
-            )
-
-    else:
-        row_layout_cols = st.columns(1)
-        with row_layout_cols[0]:
-            render_player_subgrid(
-                st.session_state.active_player_name,
-                container_index=0,
-                html_obj=html,
-                nivo_obj=nivo,
-                unique_canvas_key="master_deck_canvas_left",
-                max_values=max_vals,
-            )
+    with col1:
+        render_player_subgrid(
+            target_player_name=st.session_state.active_player_name,
+            container_index=0,
+            html_obj=html,
+            nivo_obj=nivo,
+            unique_canvas_key="master_deck_canvas_left",
+            max_values=max_vals,
+            chosen_metrics_override=chosen_metrics_global
+        )
+    with col2:
+        render_player_subgrid(
+            target_player_name=st.session_state.compare_player_name,
+            container_index=1,
+            html_obj=html,
+            nivo_obj=nivo,
+            unique_canvas_key="master_deck_canvas_right",
+            max_values=max_vals,
+            chosen_metrics_override=chosen_metrics_global
+        )
+else:
+    # Single player layout fallback
+    render_player_subgrid(
+        target_player_name=st.session_state.active_player_name,
+        container_index=0,
+        html_obj=html,
+        nivo_obj=nivo,
+        unique_canvas_key="master_deck_canvas_left",
+        max_values=max_vals
+    )
