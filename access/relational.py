@@ -15,24 +15,6 @@ class SQLAccess:
         self.user = credentials['user']
         self.password = credentials['password']
 
-    def _get_credentials(self) -> Dict[str, str]:
-        credentials: Dict[str, str] = {}
-        # Load variables from the .env file into the environment
-        load_dotenv()
-        if os.getenv("ENV_MODE") == "development":
-            load_dotenv(".env.dev", override=True)
-            print("Operating in Local Development mode.")
-        else:
-            print("Operating in Neon Production mode.")
-        database_url: str = os.getenv('DATABASE_URL')
-        user: str = os.getenv('PY_USER')
-        password: str = os.getenv('PASSWORD')
-        credentials['database_url'] = database_url
-        credentials['user'] = user
-        credentials['password'] = password
-
-        return credentials
-
     def create_connection(self):
         connection = None
         try:
@@ -65,3 +47,21 @@ class SQLAccess:
 
         except OperationalError as e:
             return f"The error '{e}' occurred"
+
+    def _get_credentials(self) -> Dict[str, str]:
+        credentials: Dict[str, str] = {}
+        # Load variables from the .env file into the environment
+        load_dotenv()
+        if os.getenv("ENV_MODE") == "development":
+            load_dotenv(".env.dev", override=True)
+            print("Operating in Local Development mode.")
+        else:
+            print("Operating in Neon Production mode.")
+        database_url: str = os.getenv('DATABASE_URL')
+        user: str = os.getenv('PY_USER')
+        password: str = os.getenv('PASSWORD')
+        credentials['database_url'] = database_url
+        credentials['user'] = user
+        credentials['password'] = password
+
+        return credentials
