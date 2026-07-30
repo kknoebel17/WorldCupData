@@ -24,9 +24,7 @@ dependencies.
 2. Import the csv file from Kaggle into the postgres database.
 3. Create a `.env.dev` file in the project directory and populate with your database credentials:
 - Example:
-  - DATABASE_URL={database URL}
-  - PY_USER={SQL username}
-  - PASSWORD={SQL password}
+  - DATABASE_URL=postgresql://{database user name}:{database password}@{host}:{port}/{database name})
   - ENV_MODE=development
 
 **NOTE**: `.env.dev` is used to differentiate from the `.env` files used for database hosting in
