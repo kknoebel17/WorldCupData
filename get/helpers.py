@@ -9,8 +9,6 @@ def remove_accents(input_str):
     return "".join([c for c in nfkd_form if not unicodedata.combining(c)])
 
 def clean_player_name(df):
-    df['player'] = df.apply(
-        lambda row: remove_accents(row.player), axis='columns'
-    )
+    df['player'] = df['player'].apply(lambda x: remove_accents(str(x)))
 
     return df
