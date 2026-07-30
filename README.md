@@ -22,13 +22,15 @@ the data for the front end built with [streamlit](https://streamlit.io).
 1. From the project directory in terminal, run `python -m pip install -r requirements.txt` to install the project
 dependencies.
 2. Import the csv file from Kaggle into the postgres database.
-3. Create a `.env` file in the project directory and populate with your database credentials:
+3. Create a `.env.dev` file in the project directory and populate with your database credentials:
 - Example:
-  - DATABASE={database name}
+  - DATABASE_URL={database URL}
   - PY_USER={SQL username}
   - PASSWORD={SQL password}
-  - HOST={local host}
-  - PORT={port number}
+  - ENV_MODE=development
+
+**NOTE**: `.env.dev` is used to differentiate from the `.env` files used for database hosting in
+[Neon](https://neon.com).
 
 ### Testing
 
@@ -52,6 +54,7 @@ Kyle Knoebel
 - Swapnil Tripathi for the original players dataset.
 
 
+- [neon](https://neon.com)
 - [nivo](https://nivo.rocks)
 - [pandas](https://pandas.pydata.org)
 - [streamlit](https://streamlit.io)
