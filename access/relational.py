@@ -19,11 +19,7 @@ class SQLAccess:
         connection = None
         try:
             # Connect to your PostgresSQL database
-            connection = psycopg2.connect(
-                self.database_url,
-                user=self.user,
-                password=self.password,
-            )
+            connection = psycopg2.connect(self.database_url)
             print("Connection to PostgresSQL DB successful")
 
             # Create a cursor to execute SQL commands
