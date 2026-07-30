@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-
 import pandas as pd
 from sqlalchemy import create_engine
 from dotenv import load_dotenv
@@ -17,16 +16,22 @@ if db_url and db_url.startswith("postgres://"):
 engine = create_engine(db_url)
 
 # Read your local CSV file
-# Change 'players_data.csv' to the actual filename of your CSV file
 data_path = Path("tests/resources/players.csv")
 df = pd.read_csv(data_path)
 
-try:
-    print("Uploading CSV rows to Neon...")
+# Match the lowercase + underscore column names in your SQL definition
+df.columns = df.columns.str.strip().str.lower().str.replace(' ', '_')
 
-    # Push data to the 'players' table
-    # 'append' adds data to the table we created.
-    df.to_sql("players", engine, if_exists="append", index=False)
+try:
+    print("Uploading CSV rows to Neon custom schema...")
+
+    df.to_sql(
+        "players",
+        engine,
+        schema="worldcup26",
+        if_exists="append",
+        index=False
+    )
 
     print("Success! All player data has been successfully imported to Neon.")
 
