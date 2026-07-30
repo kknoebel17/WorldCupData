@@ -13,11 +13,11 @@ jobs:
     # Spin up a temporary PostgreSQL database container
     services:
       postgres:
-        image: postgres:11
+        image: postgres:18
         env:
-          POSTGRES_DB: ${{ secrets.DB_NAME }}
-          POSTGRES_USER: ${{ secrets.DB_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          POSTGRES_DB: test_db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres_password
         ports:
           - 5432:5432
         # Ensure postgres is healthy before running the steps
@@ -39,20 +39,19 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pytest python-dotenv psycopg2-binary
+        pip install pytest python-dotenv psycopg2-binary pandas sqlalchemy
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-    - name: Install PostgreSQL client and dependencies
+    - name: Install PostgreSQL client
       run: |
         sudo apt-get update && sudo apt-get install -y postgresql-client
-        pip install pandas sqlalchemy psycopg2-binary
 
     - name: Create database schema and tables
       env:
-        PGPASSWORD: ${{ secrets.DB_PASSWORD }}
+        PGPASSWORD: postgres_password
       run: |
-        # Ensure the target schema exists
-        psql -h localhost -U ${{ secrets.DB_USER }} -d ${{ secrets.DB_NAME }} -c "CREATE SCHEMA IF NOT EXISTS worldcup26;"
+        # Ensure the target schema exists in the container
+        psql -h localhost -U postgres -d test_db -c "CREATE SCHEMA IF NOT EXISTS worldcup26;"
         
         # Run Python to auto-create the table and insert the data safely
         python -c "
@@ -62,8 +61,11 @@ jobs:
         # Read the full CSV file
         df = pd.read_csv('tests/resources/players.csv')
         
-        # Build the engine URL
-        db_url = f'postgresql://${{ secrets.DB_USER }}:${{ secrets.DB_PASSWORD }}@localhost:5432/${{ secrets.DB_NAME }}'
+        # Clean up column names to prevent SQL query syntax issues
+        df.columns = df.columns.str.strip().str.lower().str.replace(' ', '_')
+        
+        # Build the engine URL matching container settings
+        db_url = 'postgresql://postgres:postgres_password@localhost:5432/test_db'
         engine = create_engine(db_url)
         
         # Creates the structure AND inserts all rows safely
@@ -72,13 +74,10 @@ jobs:
         "
 
     - name: Run tests with pytest
-      # Inject the GitHub Secrets as local environment variables for the test process
+      # Inject the unified DATABASE_URL and force local development mode
       env:
         PYTHONPATH: .
-        HOST: 127.0.0.1
-        PORT: 5432
-        DATABASE: ${{ secrets.DB_NAME || 'test_db' }}
-        PY_USER: ${{ secrets.DB_USER || 'postgres' }}
-        PASSWORD: ${{ secrets.DB_PASSWORD || 'postgres' }}
+        ENV_MODE: development
+        DATABASE_URL: postgresql://postgres:postgres_password@localhost:5432/test_db
       run: |
         pytest
