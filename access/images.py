@@ -35,7 +35,7 @@ class Images:
                 image_json = response.json()
                 image_url = image_json['data'][0]['thumbnail_url']
                 image_data = requests.get(image_url)
-                if image_data:
+                if image_data.content:
                     # Save the binary content into a file
                     image = Image.open(BytesIO(image_data.content))
                 else:

@@ -1,12 +1,18 @@
 """Single location for tests related to the image access class."""
 
 import requests
+import pytest
 from PIL import ImageFile
 from unittest.mock import Mock
 
 from access.images import Images
 
-def test_image_access(monkeypatch):
+@pytest.mark.parametrize(
+    "image_content", [
+        b"GIF89a\x01\x00\x01\x00\x80\x00\x00\x00\x00\x00\xff\xff\xff!\xf9\x04\x01\x00\x00\x00\x00,\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02D\x01\x00;",
+        None,
+    ])
+def test_image_access(monkeypatch, image_content):
     # Mock request for thumbnail url
     mock_json_data = {
         "data": [
@@ -18,10 +24,9 @@ def test_image_access(monkeypatch):
     mock_api_response.json.return_value = mock_json_data
 
     # Mock request for image
-    tiny_gif_bytes = b"GIF89a\x01\x00\x01\x00\x80\x00\x00\x00\x00\x00\xff\xff\xff!\xf9\x04\x01\x00\x00\x00\x00,\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02D\x01\x00;"
     mock_image_data_response = Mock()
     mock_image_data_response.status_code = 200
-    mock_image_data_response.content = tiny_gif_bytes
+    mock_image_data_response.content = image_content
 
     mock_get = Mock(side_effect=[mock_api_response, mock_image_data_response])
     monkeypatch.setattr(requests, "get", mock_get)
