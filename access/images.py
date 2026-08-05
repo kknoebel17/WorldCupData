@@ -35,6 +35,9 @@ class Images:
     def get_image(self) -> Union[str, ImageFile]:
         load_dotenv()
         api_key = str(os.getenv("IMAGES_API_KEY"))
+        image_url = self.get_image_url()
+        if image_url:
+            return image_url[0][0]
         try:
             response = requests.get(
                 "https://api.openwebninja.com/realtime-image-search/search",
