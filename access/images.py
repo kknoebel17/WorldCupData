@@ -9,9 +9,28 @@ import requests
 from dotenv import load_dotenv
 from PIL import Image, ImageFile
 
+from access.relational import SQLAccess
+
 class Images:
     def __init__(self, player_name: str):
+        self.sa = SQLAccess()
         self.player_name = player_name
+
+    def get_image_url(self) -> Union[None, str]:
+        """Get image URL for given player_name."""
+        # Check that image url does not already exist
+        sql_statement = """
+                        SELECT worldcup26.images.image_url
+                        FROM worldcup26.images
+                        JOIN worldcup26.players ON worldcup26.players.player_id = worldcup26.images.player_id
+                        WHERE worldcup26.players.player = %s
+                        """
+        cursor = self.sa.create_connection()
+        cursor.execute(sql_statement, (self.player_name,))
+        results = cursor.fetchall()
+        self.sa.close_connection(cursor)
+
+        return results
 
     def get_image(self) -> Union[str, ImageFile]:
         load_dotenv()

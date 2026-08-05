@@ -6,6 +6,7 @@ from PIL import ImageFile
 from unittest.mock import Mock
 
 from access.images import Images
+from access.relational import SQLAccess
 
 @pytest.mark.parametrize(
     "image_content", [
@@ -37,3 +38,25 @@ def test_image_access(monkeypatch, image_content):
     assert query_data is not None
     assert isinstance(query_data, ImageFile.ImageFile)
     assert mock_get.call_count == 2
+
+def test_get_image_url():
+    # Set up database
+    player_name = 'Vinicius Júnior'
+    player_id = str(184)
+    image_url = "https://example.com"
+    sa = SQLAccess()
+    cursor = sa.create_connection()
+    test_statement = (f"INSERT into worldcup26.images (image_url, player_id) VALUES (%s, %s)")
+    record_to_insert = (image_url, player_id)
+    cursor.execute(test_statement, record_to_insert)
+    sa.connection.commit()
+    # Test image class
+    ia = Images(player_name)
+    url = ia.get_image_url()[0][0]
+    assert url == image_url
+
+    # Clean up database
+    cursor.execute("DELETE FROM worldcup26.images")
+    sa.connection.commit()
+    sa.close_connection(cursor)
+
