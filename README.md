@@ -22,6 +22,7 @@ the data for the front end built with [streamlit](https://streamlit.io).
 1. From the project directory in terminal, run `python -m pip install -r requirements.txt` to install the project
 dependencies.
 2. Import the csv file from Kaggle into the postgres database.
+3. Create a database and schema that match the format of `schema.sql` in teast/resources
 3. Create a `.env.dev` file in the project directory and populate with your database credentials:
 - Example:
   - DATABASE_URL=postgresql://{database user name}:{database password}@{host}:{port}/{database name})
