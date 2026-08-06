@@ -53,6 +53,11 @@ def test_get_image_url():
     # Test image class
     ia = Images(player_name)
     url = ia.get_image_url()
+    # Test image written to database
+    test_statement = ("SELECT * from worldcup26.images")
+    cursor.execute(test_statement)
+    sa.connection.commit()
+    test_results = cursor.fetchall()
 
     # Clean up database
     cursor.execute("DELETE FROM worldcup26.images")
@@ -60,6 +65,7 @@ def test_get_image_url():
     sa.close_connection(cursor)
 
     assert url[0][0] == image_url
+    assert test_results is not None
 
 def test_get_image_url_when_exists(monkeypatch):
     # Mock request for thumbnail url
@@ -100,3 +106,25 @@ def test_get_image_url_when_exists(monkeypatch):
     sa.close_connection(cursor)
 
     assert url == image_url
+
+def test_write_image_url():
+    player_name = 'Vinicius Júnior'
+    player_id = 184
+    image_url = "https://example.com"
+    ia = Images(player_name)
+    ia.write_image_url(image_url)
+
+    sa = SQLAccess()
+    cursor = sa.create_connection()
+    test_statement = ("SELECT * from worldcup26.images")
+    cursor.execute(test_statement)
+    sa.connection.commit()
+    test_results = cursor.fetchall()
+
+    # Clean up database
+    cursor.execute("DELETE FROM worldcup26.images")
+    sa.connection.commit()
+    sa.close_connection(cursor)
+
+    assert test_results[0][1] == image_url
+    assert test_results[0][2] == player_id
