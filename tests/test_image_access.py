@@ -14,6 +14,8 @@ from access.relational import SQLAccess
         None,
     ])
 def test_image_access(monkeypatch, image_content):
+    sa = SQLAccess()
+    cursor = sa.create_connection()
     # Mock request for thumbnail url
     mock_json_data = {
         "data": [
@@ -32,9 +34,15 @@ def test_image_access(monkeypatch, image_content):
     mock_get = Mock(side_effect=[mock_api_response, mock_image_data_response])
     monkeypatch.setattr(requests, "get", mock_get)
 
-    player_name = 'Vinicius Junior'
+    player_name = 'Vinicius Júnior'
     ia = Images(player_name)
     query_data = ia.get_image()
+
+    # Clean up database
+    cursor.execute("DELETE FROM worldcup26.images")
+    sa.connection.commit()
+    sa.close_connection(cursor)
+
     assert query_data is not None
     assert isinstance(query_data, ImageFile.ImageFile)
     assert mock_get.call_count == 2
