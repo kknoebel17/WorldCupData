@@ -6,11 +6,6 @@ on:
   pull_request:
     branches: [ "main" ]
 
-  permissions:
-    contents: read
-    statuses: write
-    checks: write
-
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -55,10 +50,10 @@ jobs:
       env:
         PGPASSWORD: postgres_password
       run: |
-        Initialize the official schema and tables from your SQL script
+        # Initialize the official schema and tables from your SQL script
         psql -h localhost -U postgres -d test_db -f tests/resources/schema.sql
         
-        Append the CSV data into the pre-existing structured table
+        # Append the CSV data into the pre-existing structured table
         python -c "
         import pandas as pd
         from sqlalchemy import create_engine
