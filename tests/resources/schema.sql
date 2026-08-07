@@ -86,8 +86,8 @@ CREATE TABLE worldcup26.players (
     crosses real,
     interceptions real,
     tackles_won real,
-    pens_won character varying(50),
-    pens_conceded character varying(50),
+    pens_won real,
+    pens_conceded real,
     own_goals real,
     gk_games real,
     gk_games_starts real,
@@ -106,7 +106,7 @@ CREATE TABLE worldcup26.players (
     gk_pens_allowed real,
     gk_pens_saved real,
     gk_pens_missed real,
-    gk_pens_save_pct character varying(50),
+    gk_pens_save_pct real,
     player_id bigint CONSTRAINT players_id_not_null NOT NULL
 );
 
