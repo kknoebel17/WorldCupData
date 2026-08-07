@@ -14,16 +14,16 @@ class SQLAccess:
         self.database_url = credentials['database_url']
         self.user = credentials['user']
         self.password = credentials['password']
+        self.connection = psycopg2.connect(self.database_url)
 
     def create_connection(self):
         connection = None
         try:
             # Connect to your PostgresSQL database
-            connection = psycopg2.connect(self.database_url)
             print("Connection to PostgresSQL DB successful")
 
             # Create a cursor to execute SQL commands
-            cursor = connection.cursor()
+            cursor = self.connection.cursor()
 
             # Run a test query (Fetch PostgresSQL version)
             cursor.execute("SELECT version();")

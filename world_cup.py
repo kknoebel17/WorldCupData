@@ -14,6 +14,7 @@ from st_aggrid import (
     GridOptionsBuilder,
 )
 
+from access.images import Images
 from constants import NON_NUMERIC_COLS
 from get.players import Players
 
@@ -119,8 +120,13 @@ def render_player_subgrid(
                 st.rerun()
 
         with top_col2:
-            image_path = Path('images.png')
-            st.image(image_path, width=100)
+            image = Images(stats['Player Name']).get_image()
+            try:
+                st.image(image, width=100)
+            except Exception as e:  # NOTE: remove this try/except block once all players have images
+                blank_image_path = Path('images.png')
+                st.image(blank_image_path, width=100)
+
 
         st.divider()
 

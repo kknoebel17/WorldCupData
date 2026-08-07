@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [ "main" ]
 
+  permissions:
+    contents: read
+    statuses: write
+    checks: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -50,27 +55,30 @@ jobs:
       env:
         PGPASSWORD: postgres_password
       run: |
-        # Ensure the target schema exists in the container
-        psql -h localhost -U postgres -d test_db -c "CREATE SCHEMA IF NOT EXISTS worldcup26;"
+        Initialize the official schema and tables from your SQL script
+        psql -h localhost -U postgres -d test_db -f tests/resources/schema.sql
         
-        # Run Python to auto-create the table and insert the data safely
+        Append the CSV data into the pre-existing structured table
         python -c "
         import pandas as pd
         from sqlalchemy import create_engine
         
-        # Read the full CSV file
+        # Read raw CSV
         df = pd.read_csv('tests/resources/players.csv')
         
-        # Clean up column names to prevent SQL query syntax issues
+        # Clean column names to match the exact schema structure
         df.columns = df.columns.str.strip().str.lower().str.replace(' ', '_')
         
-        # Build the engine URL matching container settings
+        # Drop 'player_id' if it exists in raw CSV so Postgres can auto-generate it
+        if 'player_id' in df.columns:
+            df = df.drop(columns=['player_id'])
+        
         db_url = 'postgresql://postgres:postgres_password@localhost:5432/test_db'
         engine = create_engine(db_url)
         
-        # Creates the structure AND inserts all rows safely
-        df.to_sql('players', engine, schema='worldcup26', if_exists='replace', index=False)
-        print('Table structure and data successfully imported via Pandas!')
+        # Append rows to the existing table instead of 'replace'
+        df.to_sql('players', engine, schema='worldcup26', if_exists='append', index=False)
+        print('CSV data successfully appended to the structured schema!')
         "
 
     - name: Run tests with pytest
